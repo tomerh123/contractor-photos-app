@@ -3,7 +3,7 @@ import * as db from '../db';
 import PhotoViewer from './PhotoViewer';
 import { ArrowLeft, ArrowUp, ArrowDown } from 'lucide-react';
 
-const AllPhotosView = ({ navigateTo }) => {
+const AllPhotosView = ({ navigateTo, initialPhotoId }) => {
     const [photos, setPhotos] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedPhoto, setSelectedPhoto] = useState(null);
@@ -31,11 +31,19 @@ const AllPhotosView = ({ navigateTo }) => {
             const allProjects = await db.getProjects();
 
             setProjects(allProjects);
-            setPhotos(sortPhotos(allPhotos));
+            const sortedPhotos = sortPhotos(allPhotos);
+            setPhotos(sortedPhotos);
             setLoading(false);
+
+            if (initialPhotoId) {
+                const targetPhoto = sortedPhotos.find(p => p.PhotoID === initialPhotoId);
+                if (targetPhoto) {
+                    setSelectedPhoto(targetPhoto);
+                }
+            }
         };
         fetchData();
-    }, [sortOrder]);
+    }, [sortOrder, initialPhotoId]);
 
     const getProjectName = (projectId) => {
         const p = projects.find(proj => proj.ProjectID === projectId);

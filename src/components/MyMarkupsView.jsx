@@ -3,7 +3,7 @@ import * as db from '../db';
 import PhotoViewer from './PhotoViewer';
 import { ArrowLeft, ArrowUp, ArrowDown } from 'lucide-react';
 
-const MyMarkupsView = ({ navigateTo }) => {
+const MyMarkupsView = ({ navigateTo, initialPhotoId }) => {
     const [photos, setPhotos] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedPhoto, setSelectedPhoto] = useState(null);
@@ -32,13 +32,21 @@ const MyMarkupsView = ({ navigateTo }) => {
 
             // Only keep marked up photos
             const markedUpPhotos = allPhotos.filter(p => p.IsMarkedUp === true);
+            const sortedPhotos = sortPhotos(markedUpPhotos);
 
             setProjects(allProjects);
-            setPhotos(sortPhotos(markedUpPhotos));
+            setPhotos(sortedPhotos);
             setLoading(false);
+
+            if (initialPhotoId) {
+                const targetPhoto = sortedPhotos.find(p => p.PhotoID === initialPhotoId);
+                if (targetPhoto) {
+                    setSelectedPhoto(targetPhoto);
+                }
+            }
         };
         fetchData();
-    }, [sortOrder]);
+    }, [sortOrder, initialPhotoId]);
 
     const getProjectName = (projectId) => {
         const p = projects.find(proj => proj.ProjectID === projectId);

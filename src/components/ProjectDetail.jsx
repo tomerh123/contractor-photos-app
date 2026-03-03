@@ -5,7 +5,7 @@ import { ArrowLeft, Camera, Upload, Sparkles, MapPin, Share2, ImageIcon, CheckSq
 import LZString from 'lz-string';
 import PunchListView from './PunchListView';
 
-const ProjectDetail = ({ projectId, navigateTo }) => {
+const ProjectDetail = ({ projectId, navigateTo, initialPhotoId }) => {
     const [activeTab, setActiveTab] = useState('GALLERY');
     const [project, setProject] = useState(null);
     const [photos, setPhotos] = useState([]);
@@ -137,11 +137,18 @@ const ProjectDetail = ({ projectId, navigateTo }) => {
             setProject(proj);
             setPhotos(projPhotos);
             setLoading(false);
+
+            if (initialPhotoId) {
+                const targetPhoto = projPhotos.find(p => p.PhotoID === initialPhotoId);
+                if (targetPhoto) {
+                    setSelectedPhoto(targetPhoto);
+                }
+            }
         };
         if (projectId) {
             fetchData();
         }
-    }, [projectId]);
+    }, [projectId, initialPhotoId]);
 
     if (loading) return <div className="content-pad">Loading project details...</div>;
     if (!project) return <div className="content-pad">Project not found.</div>;
