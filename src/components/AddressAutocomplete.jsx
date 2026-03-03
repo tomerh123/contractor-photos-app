@@ -69,12 +69,6 @@ const AddressAutocomplete = ({ value, onChange, placeholder = "Enter location" }
 
             setResults(formattedResults);
             setShowDropdown(true);
-
-            // Auto-fallback: invisibly give the parent the coordinates of the first match 
-            // so if the user hits "Create" without clicking, it still gets a GPS location!
-            if (formattedResults.length > 0) {
-                onChange(searchText, formattedResults[0].lat, formattedResults[0].lon);
-            }
         } catch (error) {
             console.error('Error fetching address:', error);
         } finally {
