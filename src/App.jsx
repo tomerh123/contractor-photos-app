@@ -9,6 +9,7 @@ import AllPhotosView from './components/AllPhotosView';
 import ProfileView from './components/ProfileView';
 import PlaceholderView from './components/PlaceholderView';
 import SharedProjectView from './components/SharedProjectView';
+import MyMarkupsView from './components/MyMarkupsView';
 
 function App() {
     const hash = window.location.hash;
@@ -38,8 +39,7 @@ function App() {
                 {currentView === 'MARKUP' && <MarkupView projectId={selectedProjectId} photoUrl={capturedPhotoUrl} editingPhotoId={editingPhotoId} navigateTo={navigateTo} />}
                 {currentView === 'RECENT_PHOTOS' && <AllPhotosView navigateTo={navigateTo} />}
 
-                {/* Dummy placeholder screens */}
-                {currentView === 'MY_MARKUPS' && <PlaceholderView title="My Markups" type="markups" navigateTo={navigateTo} />}
+                {currentView === 'MY_MARKUPS' && <MyMarkupsView navigateTo={navigateTo} />}
                 {currentView === 'SETTINGS' && <PlaceholderView title="Settings" type="settings" navigateTo={navigateTo} />}
                 {currentView === 'PROFILE' && <ProfileView navigateTo={navigateTo} />}
 

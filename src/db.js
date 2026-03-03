@@ -190,7 +190,7 @@ export const updatePhotoNotes = async (photoId, newNotes) => {
     return photo;
 };
 
-export const updatePhoto = async (photoId, newImageFile, newNotes) => {
+export const updatePhoto = async (photoId, newImageFile, newNotes, isMarkedUp = undefined) => {
     await loadPhotos();
     const photoIndex = mockPhotos.findIndex(p => p.PhotoID === photoId);
     if (photoIndex !== -1) {
@@ -200,6 +200,9 @@ export const updatePhoto = async (photoId, newImageFile, newNotes) => {
             Notes: newNotes,
             Timestamp: new Date().toISOString() // Update timestamp to show it was recently modified
         };
+        if (isMarkedUp !== undefined) {
+            mockPhotos[photoIndex].IsMarkedUp = isMarkedUp;
+        }
         await savePhotos();
         return mockPhotos[photoIndex];
     }

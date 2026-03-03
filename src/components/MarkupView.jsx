@@ -173,7 +173,7 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo }) => {
 
         if (editingPhotoId) {
             // Overwrite existing photo
-            await db.updatePhoto(editingPhotoId, modifiedPhotoUrl, notes);
+            await db.updatePhoto(editingPhotoId, modifiedPhotoUrl, notes, true);
         } else {
             // Create brand new photo
             const newPhoto = {
@@ -182,7 +182,8 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo }) => {
                 ImageFile: modifiedPhotoUrl,
                 Timestamp: new Date().toISOString(),
                 UploaderID: currentUser.UserID,
-                Notes: notes
+                Notes: notes,
+                IsMarkedUp: true
             };
             await db.addPhoto(newPhoto);
         }
