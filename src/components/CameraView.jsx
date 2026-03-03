@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { Zap, ZapOff } from 'lucide-react';
 
 const CameraView = ({ projectId, navigateTo }) => {
     const videoRef = useRef(null);
@@ -7,6 +8,12 @@ const CameraView = ({ projectId, navigateTo }) => {
     const [errorDetails, setErrorDetails] = useState('');
     const [flashOn, setFlashOn] = useState(false);
     const [supportsTorch, setSupportsTorch] = useState(false);
+
+    // Zoom state
+    const [zoom, setZoom] = useState(1);
+    const [zoomCapabilities, setZoomCapabilities] = useState({ min: 1, max: 1 });
+    const initialPinchDistanceRef = useRef(null);
+    const initialZoomRef = useRef(null);
 
     // Start the camera
     useEffect(() => {
@@ -46,13 +53,17 @@ const CameraView = ({ projectId, navigateTo }) => {
                     videoRef.current.srcObject = mediaStream;
                 }
 
-                // Check for flash (torch) support
+                // Check for flash (torch) and zoom support
                 const track = mediaStream.getVideoTracks()[0];
                 if (track) {
                     try {
                         const capabilities = track.getCapabilities();
                         if (capabilities.torch) {
                             setSupportsTorch(true);
+                        }
+                        if (capabilities.zoom) {
+                            setZoomCapabilities({ min: capabilities.zoom.min, max: capabilities.zoom.max });
+                            setZoom(track.getSettings().zoom || 1);
                         }
                     } catch (e) { }
                 }
@@ -87,6 +98,39 @@ const CameraView = ({ projectId, navigateTo }) => {
         }
     };
 
+    // Zoom handlers
+    const handleTouchStart = (e) => {
+        if (e.touches.length === 2 && zoomCapabilities.max > 1) {
+            const touch1 = e.touches[0];
+            const touch2 = e.touches[1];
+            const dist = Math.hypot(touch1.clientX - touch2.clientX, touch1.clientY - touch2.clientY);
+            initialPinchDistanceRef.current = dist;
+            initialZoomRef.current = zoom;
+        }
+    };
+
+    const handleTouchMove = (e) => {
+        if (e.touches.length === 2 && initialPinchDistanceRef.current && zoomCapabilities.max > 1) {
+            const touch1 = e.touches[0];
+            const touch2 = e.touches[1];
+            const dist = Math.hypot(touch1.clientX - touch2.clientX, touch1.clientY - touch2.clientY);
+
+            const scale = dist / initialPinchDistanceRef.current;
+            let newZoom = initialZoomRef.current * scale;
+            newZoom = Math.max(zoomCapabilities.min, Math.min(newZoom, zoomCapabilities.max));
+
+            if (Math.abs(newZoom - zoom) > 0.05) {
+                setZoom(newZoom);
+                const track = stream.getVideoTracks()[0];
+                if (track) {
+                    track.applyConstraints({
+                        advanced: [{ zoom: newZoom }]
+                    }).catch(e => console.warn('Zoom not supported on this track', e));
+                }
+            }
+        }
+    };
+
     const capturePhoto = () => {
         if (videoRef.current && canvasRef.current) {
             const video = videoRef.current;
@@ -107,13 +151,9 @@ const CameraView = ({ projectId, navigateTo }) => {
             let cropY = 0;
 
             if (currentAspect > targetAspect) {
-                // The video feed is wider than 3:4 (e.g. landscape 4:3 or 16:9)
-                // We need to crop the sides off to force 3:4 portrait
                 cropWidth = videoHeight * targetAspect;
                 cropX = (videoWidth - cropWidth) / 2;
             } else {
-                // The video feed is taller than 3:4 (e.g. skinny 9:16 portrait)
-                // We need to crop the top and bottom off to force 3:4 portrait
                 cropHeight = videoWidth / targetAspect;
                 cropY = (videoHeight - cropHeight) / 2;
             }
@@ -157,27 +197,32 @@ const CameraView = ({ projectId, navigateTo }) => {
             display: 'flex',
             flexDirection: 'column'
         }}>
+            {/* Top Toolbar */}
             <div
                 style={{
-                    padding: '1.5rem',
+                    padding: 'max(1.5rem, env(safe-area-inset-top)) 1.5rem 1rem 1.5rem',
                     display: 'flex',
                     justifyContent: 'space-between',
+                    alignItems: 'center',
                     position: 'absolute',
                     top: 0,
                     left: 0,
                     right: 0,
-                    zIndex: 10
+                    zIndex: 10,
+                    background: 'linear-gradient(to bottom, rgba(0,0,0,0.6), transparent)'
                 }}
             >
                 <button
                     onClick={cancelAndGoBack}
                     style={{
-                        background: 'rgba(0,0,0,0.5)',
+                        background: 'transparent',
                         color: 'white',
                         border: 'none',
-                        borderRadius: '20px',
-                        padding: '0.5rem 1rem',
-                        backdropFilter: 'blur(5px)'
+                        fontSize: '1.1rem',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        padding: '0.5rem 0',
+                        textShadow: '0 1px 4px rgba(0,0,0,0.5)'
                     }}
                 >
                     Cancel
@@ -186,23 +231,31 @@ const CameraView = ({ projectId, navigateTo }) => {
                     <button
                         onClick={toggleFlash}
                         style={{
-                            background: flashOn ? 'white' : 'rgba(0,0,0,0.5)',
+                            background: flashOn ? '#ffcc00' : 'transparent',
                             color: flashOn ? 'black' : 'white',
                             border: 'none',
-                            borderRadius: '20px',
-                            padding: '0.5rem 1rem',
-                            backdropFilter: 'blur(5px)',
+                            borderRadius: '50%',
+                            width: '40px',
+                            height: '40px',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '0.5rem'
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            boxShadow: flashOn ? '0 0 10px rgba(255, 204, 0, 0.5)' : 'none'
                         }}
+                        aria-label="Toggle Flash"
                     >
-                        {flashOn ? '⚡ Flash On' : '⚡ Flash Off'}
+                        {flashOn ? <Zap size={20} fill="black" /> : <ZapOff size={20} />}
                     </button>
                 )}
             </div>
 
-            <div style={{ flex: 1, position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div
+                style={{ flex: 1, position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+            >
                 {errorDetails ? (
                     <div style={{ color: 'white', padding: '2rem', textAlign: 'center' }}>
                         <p>{errorDetails}</p>
@@ -222,6 +275,23 @@ const CameraView = ({ projectId, navigateTo }) => {
                 )}
                 {/* Hidden canvas for capturing the frame */}
                 <canvas ref={canvasRef} style={{ display: 'none' }} />
+
+                {/* Optional Zoom Indicator (shows briefly when zooming) */}
+                {zoomCapabilities.max > 1 && zoom > 1.05 && (
+                    <div style={{
+                        position: 'absolute',
+                        bottom: '20px',
+                        backgroundColor: 'rgba(0,0,0,0.5)',
+                        color: '#ffcc00',
+                        padding: '4px 12px',
+                        borderRadius: '12px',
+                        fontSize: '0.9rem',
+                        fontWeight: 'bold',
+                        pointerEvents: 'none'
+                    }}>
+                        {zoom.toFixed(1)}x
+                    </div>
+                )}
             </div>
 
             <div style={{
@@ -232,7 +302,8 @@ const CameraView = ({ projectId, navigateTo }) => {
                 position: 'absolute',
                 bottom: 0,
                 left: 0,
-                right: 0
+                right: 0,
+                paddingBottom: 'max(2rem, env(safe-area-inset-bottom))'
             }}>
                 <button
                     onClick={capturePhoto}
@@ -251,7 +322,7 @@ const CameraView = ({ projectId, navigateTo }) => {
                     }}
                     aria-label="Capture button"
                 >
-                    <div style={{ width: '60px', height: '60px', borderRadius: '30px', backgroundColor: 'white' }}></div>
+                    <div style={{ width: '64px', height: '64px', borderRadius: '32px', backgroundColor: 'white' }}></div>
                 </button>
             </div>
         </div>
