@@ -190,7 +190,7 @@ export const updatePhotoNotes = async (photoId, newNotes) => {
     return photo;
 };
 
-export const updatePhoto = async (photoId, newImageFile, newNotes, isMarkedUp = undefined) => {
+export const updatePhoto = async (photoId, newImageFile, newNotes, isMarkedUp = undefined, originalImageFile = undefined) => {
     await loadPhotos();
     const photoIndex = mockPhotos.findIndex(p => p.PhotoID === photoId);
     if (photoIndex !== -1) {
@@ -202,6 +202,9 @@ export const updatePhoto = async (photoId, newImageFile, newNotes, isMarkedUp = 
         };
         if (isMarkedUp !== undefined) {
             mockPhotos[photoIndex].IsMarkedUp = isMarkedUp;
+        }
+        if (originalImageFile !== undefined) {
+            mockPhotos[photoIndex].OriginalImageFile = originalImageFile;
         }
         await savePhotos();
         return mockPhotos[photoIndex];

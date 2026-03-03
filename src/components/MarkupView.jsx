@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useApp } from '../AppContext';
 import * as db from '../db';
-import { PenTool, Undo2, Eraser, MessageSquare, Edit2 } from 'lucide-react';
+import { PenTool, Undo2, Eraser, MessageSquare, Edit2, RotateCcw } from 'lucide-react';
 
 const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo }) => {
     const canvasRef = useRef(null);
@@ -10,25 +10,33 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo }) => {
 
     const [notes, setNotes] = useState('');
     const [isDrawing, setIsDrawing] = useState(false);
-    const [isDrawMode, setIsDrawMode] = useState(false); // Controls if the canvas is active for drawing
-    const [color, setColor] = useState('#ef4444'); // Default red
+    const [isDrawMode, setIsDrawMode] = useState(false);
+    const [color, setColor] = useState('#ef4444');
     const [isSaving, setIsSaving] = useState(false);
     const [history, setHistory] = useState([]);
     const [showNoteModal, setShowNoteModal] = useState(false);
 
-    // If editing an existing photo, fetch its notes
+    // Original photo tracking to allow reverting markups
+    const [originalPhotoUrl, setOriginalPhotoUrl] = useState(photoUrl);
+
     useEffect(() => {
         if (editingPhotoId) {
-            const fetchExistingNotes = async () => {
+            const fetchExistingData = async () => {
                 const projPhotos = await db.getPhotosForProject(projectId);
                 const existingPhoto = projPhotos.find(p => p.PhotoID === editingPhotoId);
-                if (existingPhoto && existingPhoto.Notes) {
-                    setNotes(existingPhoto.Notes);
+                if (existingPhoto) {
+                    if (existingPhoto.Notes) setNotes(existingPhoto.Notes);
+
+                    // Keep track of the clean unedited photo if it has one, otherwise the first save sets it
+                    setOriginalPhotoUrl(existingPhoto.OriginalImageFile || existingPhoto.ImageFile);
                 }
             };
-            fetchExistingNotes();
+            fetchExistingData();
+        } else {
+            // New photo from camera, photoUrl is naturally the original
+            setOriginalPhotoUrl(photoUrl);
         }
-    }, [editingPhotoId, projectId]);
+    }, [editingPhotoId, projectId, photoUrl]);
 
     // Load the captured image onto the canvas
     useEffect(() => {
@@ -39,26 +47,21 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo }) => {
         const img = new Image();
 
         img.onload = () => {
-            // Internal high-res resolution maps to the image
             canvas.width = img.width;
             canvas.height = img.height;
 
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-            // Setup drawing style
             ctx.lineJoin = 'round';
             ctx.lineCap = 'round';
-            // Scale linewidth based on image size so drawing remains visible at high resolutions
             ctx.lineWidth = Math.max(4, canvas.width * 0.012);
 
-            // Save initial state to history stack
             setHistory([canvas.toDataURL('image/jpeg', 1.0)]);
         };
         img.src = photoUrl;
     }, [photoUrl]);
 
-    // Handle pointer interactions for drawing lines
     const startDrawing = (e) => {
         if (!isDrawMode) return;
         const { offsetX, offsetY } = getCoordinates(e);
@@ -71,7 +74,7 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo }) => {
 
     const draw = (e) => {
         if (!isDrawing || !isDrawMode) return;
-        e.preventDefault(); // Prevent scrolling on touch
+        e.preventDefault();
         const { offsetX, offsetY } = getCoordinates(e);
         const ctx = canvasRef.current.getContext('2d');
         ctx.lineTo(offsetX, offsetY);
@@ -84,7 +87,6 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo }) => {
             ctx.closePath();
             setIsDrawing(false);
 
-            // Save state asynchronously after stroke finishes to prevent input lag
             setTimeout(() => {
                 if (canvasRef.current) {
                     setHistory(prev => [...prev, canvasRef.current.toDataURL('image/jpeg', 0.5)]);
@@ -94,10 +96,10 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo }) => {
     };
 
     const handleUndo = () => {
-        if (history.length <= 1) return; // Need at least the base image
+        if (history.length <= 1) return;
 
         const newHistory = [...history];
-        newHistory.pop(); // Remove current state
+        newHistory.pop();
 
         const previousState = newHistory[newHistory.length - 1];
         setHistory(newHistory);
@@ -109,7 +111,6 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo }) => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(img, 0, 0);
 
-            // Re-apply styles
             ctx.lineJoin = 'round';
             ctx.lineCap = 'round';
             ctx.lineWidth = Math.max(4, canvas.width * 0.012);
@@ -118,7 +119,7 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo }) => {
     };
 
     const handleClear = () => {
-        if (history.length <= 1) return; // Already cleared
+        if (history.length <= 1) return;
 
         const baseImage = history[0];
         setHistory([baseImage]);
@@ -130,7 +131,6 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo }) => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(img, 0, 0);
 
-            // Re-apply styles
             ctx.lineJoin = 'round';
             ctx.lineCap = 'round';
             ctx.lineWidth = Math.max(4, canvas.width * 0.012);
@@ -138,11 +138,31 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo }) => {
         img.src = baseImage;
     };
 
+    // Completely wipe all markups ever made to the picture by loading the original unedited photo
+    const handleRestoreOriginal = () => {
+        if (!originalPhotoUrl) return;
+
+        const img = new Image();
+        img.onload = () => {
+            const canvas = canvasRef.current;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0);
+
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            ctx.lineWidth = Math.max(4, canvas.width * 0.012);
+
+            // Overwrite history entirely with the clean slate
+            setHistory([canvas.toDataURL('image/jpeg', 1.0)]);
+        };
+        img.src = originalPhotoUrl;
+    };
+
     const getCoordinates = (e) => {
         const canvas = canvasRef.current;
         const rect = canvas.getBoundingClientRect();
 
-        // Calculate scaling factor between CSS size and actual canvas resolution
         const scaleX = canvas.width / rect.width;
         const scaleY = canvas.height / rect.height;
 
@@ -167,30 +187,32 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo }) => {
 
     const handleSave = async () => {
         setIsSaving(true);
-
-        // Extract canvas content including the drawn lines
         const modifiedPhotoUrl = canvasRef.current.toDataURL('image/jpeg', 0.85);
 
+        // If the current history stack's base image is the original AND no new strokes were drawn, it's not marked up.
+        // (However, photoUrl passed in might be the ALREADY marked up one, so we check against originalPhotoUrl)
+        let isCurrentlyMarkedUp = true;
+        if (history.length === 1 && history[0] === originalPhotoUrl) {
+            isCurrentlyMarkedUp = false;
+        }
+
         if (editingPhotoId) {
-            // Overwrite existing photo
-            await db.updatePhoto(editingPhotoId, modifiedPhotoUrl, notes, true);
+            await db.updatePhoto(editingPhotoId, modifiedPhotoUrl, notes, isCurrentlyMarkedUp, originalPhotoUrl);
         } else {
-            // Create brand new photo
             const newPhoto = {
                 PhotoID: `photo-${Date.now()}`,
                 ProjectID: projectId,
                 ImageFile: modifiedPhotoUrl,
+                OriginalImageFile: originalPhotoUrl,
                 Timestamp: new Date().toISOString(),
                 UploaderID: currentUser.UserID,
                 Notes: notes,
-                IsMarkedUp: true
+                IsMarkedUp: isCurrentlyMarkedUp
             };
             await db.addPhoto(newPhoto);
         }
 
         setIsSaving(false);
-
-        // Return to the project detail view
         navigateTo('PROJECT_DETAIL', projectId);
     };
 
@@ -198,14 +220,13 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo }) => {
         <div className="markup-view" style={{
             display: 'flex',
             flexDirection: 'column',
-            height: '100dvh', // Use dynamic viewport height to fix mobile browser chrome issues
+            height: '100dvh',
             backgroundColor: 'var(--background)'
         }}>
             <header className="header" style={{ justifyContent: 'center' }}>
                 <h2 style={{ margin: 0, fontSize: '1.2rem' }}>Markup Photo</h2>
             </header>
 
-            {/* Compact Toolbar */}
             <div style={{
                 display: 'flex',
                 justifyContent: 'space-between',
@@ -215,7 +236,6 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo }) => {
                 borderBottom: '1px solid var(--border)',
                 minHeight: '50px'
             }}>
-                {/* Left: Tools */}
                 <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
                     <button
                         onClick={() => setIsDrawMode(!isDrawMode)}
@@ -237,7 +257,6 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo }) => {
                         <PenTool size={18} /><span style={{ fontSize: '0.85rem' }}>Draw</span>
                     </button>
 
-                    {/* Colors (only show if Draw mode is active to save space) */}
                     {isDrawMode && (
                         <div style={{ display: 'flex', gap: '0.5rem', marginLeft: '0.5rem', animation: 'fadeIn 0.2s' }}>
                             {['#ef4444', '#10b981', '#3b82f6', '#f59e0b', '#ffffff'].map(c => (
@@ -263,6 +282,23 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo }) => {
 
                 {/* Right: History Actions */}
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    {originalPhotoUrl && originalPhotoUrl !== history[0] && (
+                        <button
+                            onClick={handleRestoreOriginal}
+                            style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: 'var(--text-primary)',
+                                cursor: 'pointer',
+                                fontSize: '1.2rem',
+                                padding: '0.2rem'
+                            }}
+                            aria-label="Restore Original"
+                            title="Restore Original Image"
+                        >
+                            <RotateCcw size={20} />
+                        </button>
+                    )}
                     <button
                         onClick={handleUndo}
                         disabled={history.length <= 1}
