@@ -1,0 +1,302 @@
+import React, { useState, useEffect } from 'react';
+import { Trash2, MessageSquare, PenTool } from 'lucide-react';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Zoom } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/zoom';
+
+const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes, onDelete }) => {
+    const [currentIndex, setCurrentIndex] = useState(initialIndex);
+    const [showUI, setShowUI] = useState(true);
+    const [isEditingNotes, setIsEditingNotes] = useState(false);
+    const [notesText, setNotesText] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+    // Swiper ref for manual navigation
+    const [swiperRef, setSwiperRef] = useState(null);
+
+    const currentPhoto = photos[currentIndex];
+
+    // Sync notes text when changing photos
+    useEffect(() => {
+        setNotesText(currentPhoto?.Notes || '');
+        setIsEditingNotes(false);
+    }, [currentIndex, currentPhoto]);
+
+    if (!currentPhoto) return null;
+
+    const handleNext = (e) => {
+        if (e) e.stopPropagation();
+        swiperRef?.slideNext();
+    };
+
+    const handlePrev = (e) => {
+        if (e) e.stopPropagation();
+        swiperRef?.slidePrev();
+    };
+
+    const toggleUI = () => {
+        if (!isEditingNotes) {
+            setShowUI(!showUI);
+        }
+    };
+
+    const saveNotes = async () => {
+        setIsSaving(true);
+        await onUpdateNotes(currentPhoto.PhotoID, notesText);
+        setIsSaving(false);
+        setIsEditingNotes(false);
+    };
+
+    const handleDelete = () => {
+        setShowDeleteModal(true);
+    };
+
+    const confirmDelete = async () => {
+        setIsDeleting(true);
+        await onDelete(currentPhoto.PhotoID);
+        setIsDeleting(false);
+        setShowDeleteModal(false);
+        if (currentIndex >= photos.length - 1 && currentIndex > 0) {
+            setCurrentIndex(currentIndex - 1);
+        }
+    };
+
+    return (
+        <div
+            style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: '#000',
+                zIndex: 2000,
+                display: 'flex',
+                flexDirection: 'column',
+                animation: 'slideUp 0.2s ease-out',
+                transition: 'background-color 0.3s ease',
+                touchAction: 'none'
+            }}
+        >
+            {/* Header Controls */}
+            <header style={{
+                padding: '1rem',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                opacity: showUI ? 1 : 0,
+                transition: 'opacity 0.2s ease',
+                pointerEvents: showUI ? 'auto' : 'none',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                zIndex: 10
+            }}>
+                <button
+                    onClick={onClose}
+                    style={{
+                        position: 'absolute',
+                        left: '1rem',
+                        background: 'rgba(255,255,255,0.2)',
+                        border: 'none',
+                        color: 'white',
+                        padding: '0.6rem 1.2rem',
+                        borderRadius: '20px',
+                        fontSize: '1rem',
+                        backdropFilter: 'blur(10px)',
+                        cursor: 'pointer'
+                    }}
+                >
+                    Close
+                </button>
+                <div style={{ color: 'white', fontWeight: 'bold', backdropFilter: 'blur(5px)', padding: '0.2rem 0.5rem', borderRadius: '5px' }}>
+                    {currentIndex + 1} / {photos.length}
+                </div>
+            </header>
+
+            {/* Image Container using Swiper.js */}
+            <div
+                onClick={toggleUI}
+                style={{
+                    flex: 1,
+                    overflow: 'hidden',
+                    position: 'relative',
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center'
+                }}
+            >
+                {/* Desktop Prev Button */}
+                {currentIndex > 0 && showUI && (
+                    <button
+                        onClick={handlePrev}
+                        style={{ position: 'absolute', left: '1rem', zIndex: 5, background: 'rgba(0,0,0,0.5)', color: 'white', border: 'none', borderRadius: '50%', width: '40px', height: '40px', fontSize: '1.2rem', cursor: 'pointer' }}>
+                        &lt;
+                    </button>
+                )}
+
+                <Swiper
+                    modules={[Zoom]}
+                    zoom={{ maxRatio: 5, minRatio: 1 }}
+                    initialSlide={initialIndex}
+                    onSwiper={setSwiperRef}
+                    onSlideChange={(swiper) => setCurrentIndex(swiper.activeIndex)}
+                    style={{ width: '100%', height: '100%', '--swiper-theme-color': '#fff' }}
+                >
+                    {photos.map((photo, index) => (
+                        <SwiperSlide key={photo.PhotoID}>
+                            <div className="swiper-zoom-container">
+                                <img
+                                    src={photo.ImageFile}
+                                    alt={`Project Photo ${index + 1}`}
+                                    draggable={false}
+                                />
+                            </div>
+                        </SwiperSlide>
+                    ))}
+                </Swiper>
+
+                {currentIndex < photos.length - 1 && showUI && (
+                    <button
+                        onClick={handleNext}
+                        style={{ position: 'absolute', right: '1rem', zIndex: 5, background: 'rgba(0,0,0,0.5)', color: 'white', border: 'none', borderRadius: '50%', width: '40px', height: '40px', fontSize: '1.2rem', cursor: 'pointer' }}>
+                        &gt;
+                    </button>
+                )}
+            </div>
+
+            {/* Bottom Action Bar */}
+            <div style={{
+                backgroundColor: 'rgba(31, 41, 55, 0.9)',
+                color: 'var(--text-primary)',
+                borderTop: '1px solid var(--border)',
+                backdropFilter: 'blur(10px)',
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                zIndex: 50,
+                transform: showUI ? 'translateY(0)' : 'translateY(100%)',
+                transition: 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.1)',
+                display: 'flex',
+                flexDirection: 'column'
+            }}>
+                {isEditingNotes ? (
+                    <div style={{ padding: '1rem' }}>
+                        <textarea
+                            value={notesText}
+                            onChange={e => setNotesText(e.target.value)}
+                            placeholder="Add a comment or note..."
+                            autoFocus
+                            style={{
+                                width: '100%',
+                                height: '80px',
+                                backgroundColor: 'var(--background)',
+                                color: 'white',
+                                border: '1px solid var(--primary-color)',
+                                borderRadius: '8px',
+                                padding: '0.8rem',
+                                marginBottom: '1rem',
+                                fontFamily: 'inherit'
+                            }}
+                        />
+                        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                            <button className="btn" onClick={() => setIsEditingNotes(false)} disabled={isSaving}>Cancel</button>
+                            <button className="btn btn-primary" onClick={saveNotes} disabled={isSaving}>
+                                {isSaving ? 'Saving...' : 'Save Note'}
+                            </button>
+                        </div>
+                    </div>
+                ) : (
+                    <>
+                        {currentPhoto.Notes && (
+                            <div style={{ padding: '1rem 1rem 0 1rem', fontSize: '0.95rem', maxHeight: '100px', overflowY: 'auto' }}>
+                                <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '4px' }}>Notes</p>
+                                <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{currentPhoto.Notes}</p>
+                            </div>
+                        )}
+
+                        <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', padding: '1rem' }}>
+                            <button
+                                onClick={handleDelete}
+                                disabled={isDeleting}
+                                style={{ background: 'transparent', border: 'none', color: '#ef4444', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', opacity: isDeleting ? 0.5 : 1 }}
+                            >
+                                <Trash2 size={24} />
+                                <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>Delete</span>
+                            </button>
+
+                            <button
+                                onClick={() => setIsEditingNotes(true)}
+                                style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}
+                            >
+                                <MessageSquare size={24} />
+                                <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>{currentPhoto.Notes ? 'Edit Note' : 'Add Note'}</span>
+                            </button>
+
+                            <button
+                                onClick={() => onAnnotate(currentPhoto)}
+                                style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}
+                            >
+                                <PenTool size={24} />
+                                <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>Annotate</span>
+                            </button>
+                        </div>
+                    </>
+                )}
+            </div>
+            <style>{`
+                @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+            `}</style>
+
+            {/* Delete Confirmation Modal */}
+            {showDeleteModal && (
+                <div className="modal-overlay" style={{ zIndex: 3000, alignItems: 'center', padding: '1.5rem' }}>
+                    <div className="modal-content" style={{ textAlign: 'center' }}>
+                        <div style={{
+                            width: '48px',
+                            height: '48px',
+                            borderRadius: '24px',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            margin: '0 auto 1rem auto',
+                            color: '#ef4444'
+                        }}>
+                            <Trash2 size={24} />
+                        </div>
+                        <h3 style={{ marginBottom: '0.5rem' }}>Delete Photo</h3>
+                        <p style={{ marginBottom: '1.5rem' }}>Are you sure you want to delete this photo forever? This action cannot be undone.</p>
+
+                        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                            <button
+                                className="btn"
+                                onClick={() => setShowDeleteModal(false)}
+                                disabled={isDeleting}
+                                style={{ flex: 1 }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className="btn"
+                                onClick={confirmDelete}
+                                disabled={isDeleting}
+                                style={{ flex: 1, backgroundColor: '#ef4444', color: 'white', border: 'none' }}
+                            >
+                                {isDeleting ? 'Deleting...' : 'Delete'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default PhotoViewer;
