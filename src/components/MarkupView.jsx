@@ -3,7 +3,7 @@ import { useApp } from '../AppContext';
 import * as db from '../db';
 import { PenTool, Undo2, Eraser, MessageSquare, Edit2, RotateCcw } from 'lucide-react';
 
-const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo }) => {
+const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo, returnView = 'PROJECT_DETAIL' }) => {
     const canvasRef = useRef(null);
     const containerRef = useRef(null);
     const { currentUser } = useApp();
@@ -212,7 +212,7 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo }) => {
         }
 
         setIsSaving(false);
-        navigateTo('PROJECT_DETAIL', projectId);
+        navigateTo(returnView, projectId);
     };
 
     return (
@@ -345,7 +345,7 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo }) => {
             <div style={{ flex: 'none', display: 'flex', gap: '0.5rem', padding: '1rem 1rem max(1rem, env(safe-area-inset-bottom))', backgroundColor: 'var(--surface)', borderTop: '1px solid var(--border)' }}>
                 <button
                     className="btn"
-                    onClick={() => navigateTo('PROJECT_DETAIL', projectId)}
+                    onClick={() => navigateTo(returnView, projectId)}
                     style={{ flex: 1, padding: '0.8rem 0.5rem', fontSize: '0.9rem' }}
                 >
                     Cancel

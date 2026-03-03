@@ -21,11 +21,20 @@ function App() {
     const [sharedDataPayload, setSharedDataPayload] = useState(sharedPayload);
     const [capturedPhotoUrl, setCapturedPhotoUrl] = useState(null);
     const [editingPhotoId, setEditingPhotoId] = useState(null);
+    const [markupReturnView, setMarkupReturnView] = useState('PROJECT_DETAIL');
 
     const navigateTo = (view, projectId = null, photoData = null, existingPhotoId = null) => {
         if (projectId) setSelectedProjectId(projectId);
         if (photoData) setCapturedPhotoUrl(photoData);
         setEditingPhotoId(existingPhotoId);
+
+        // Smart return path logic for Markup
+        if (view === 'MARKUP' && currentView !== 'CAMERA') {
+            setMarkupReturnView(currentView);
+        } else if (view === 'CAMERA') {
+            setMarkupReturnView(currentView);
+        }
+
         setCurrentView(view);
     };
 
@@ -36,7 +45,7 @@ function App() {
                 {currentView === 'ALL_PROJECTS' && <AllProjectsView navigateTo={navigateTo} />}
                 {currentView === 'PROJECT_DETAIL' && <ProjectDetail projectId={selectedProjectId} navigateTo={navigateTo} />}
                 {currentView === 'CAMERA' && <CameraView projectId={selectedProjectId} navigateTo={navigateTo} />}
-                {currentView === 'MARKUP' && <MarkupView projectId={selectedProjectId} photoUrl={capturedPhotoUrl} editingPhotoId={editingPhotoId} navigateTo={navigateTo} />}
+                {currentView === 'MARKUP' && <MarkupView projectId={selectedProjectId} photoUrl={capturedPhotoUrl} editingPhotoId={editingPhotoId} navigateTo={navigateTo} returnView={markupReturnView} />}
                 {currentView === 'RECENT_PHOTOS' && <AllPhotosView navigateTo={navigateTo} />}
 
                 {currentView === 'MY_MARKUPS' && <MyMarkupsView navigateTo={navigateTo} />}
