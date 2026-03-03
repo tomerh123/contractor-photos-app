@@ -84,8 +84,12 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo }) => {
             ctx.closePath();
             setIsDrawing(false);
 
-            // Save state after stroke finishes
-            setHistory(prev => [...prev, canvasRef.current.toDataURL('image/jpeg', 1.0)]);
+            // Save state asynchronously after stroke finishes to prevent input lag
+            setTimeout(() => {
+                if (canvasRef.current) {
+                    setHistory(prev => [...prev, canvasRef.current.toDataURL('image/jpeg', 0.5)]);
+                }
+            }, 10);
         }
     };
 
