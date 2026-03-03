@@ -10,11 +10,10 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo }) => {
 
     const [notes, setNotes] = useState('');
     const [isDrawing, setIsDrawing] = useState(false);
-    const [isDrawMode, setIsDrawMode] = useState(false);
+    const [isDrawMode, setIsDrawMode] = useState(true);
     const [color, setColor] = useState('#ef4444');
     const [isSaving, setIsSaving] = useState(false);
     const [history, setHistory] = useState([]);
-    const [showNoteModal, setShowNoteModal] = useState(false);
 
     // Original photo tracking to allow reverting markups
     const [originalPhotoUrl, setOriginalPhotoUrl] = useState(photoUrl);
@@ -237,47 +236,25 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo }) => {
                 minHeight: '50px'
             }}>
                 <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
-                    <button
-                        onClick={() => setIsDrawMode(!isDrawMode)}
-                        style={{
-                            background: isDrawMode ? 'rgba(239, 68, 68, 0.2)' : 'transparent',
-                            border: isDrawMode ? '1px solid #ef4444' : '1px solid var(--border)',
-                            color: isDrawMode ? '#ef4444' : 'var(--text-primary)',
-                            borderRadius: '20px',
-                            cursor: 'pointer',
-                            padding: '0.4rem 0.8rem',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.3rem',
-                            fontSize: '0.9rem',
-                            fontWeight: isDrawMode ? 'bold' : 'normal',
-                            transition: 'all 0.2s'
-                        }}
-                    >
-                        <PenTool size={18} /><span style={{ fontSize: '0.85rem' }}>Draw</span>
-                    </button>
-
-                    {isDrawMode && (
-                        <div style={{ display: 'flex', gap: '0.5rem', marginLeft: '0.5rem', animation: 'fadeIn 0.2s' }}>
-                            {['#ef4444', '#10b981', '#3b82f6', '#f59e0b', '#ffffff'].map(c => (
-                                <button
-                                    key={c}
-                                    onClick={() => setColor(c)}
-                                    style={{
-                                        width: '22px',
-                                        height: '22px',
-                                        borderRadius: '11px',
-                                        backgroundColor: c,
-                                        border: color === c ? '2px solid var(--text-primary)' : '1px solid transparent',
-                                        cursor: 'pointer',
-                                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                                        transition: 'transform 0.1s'
-                                    }}
-                                    aria-label={`Select color ${c}`}
-                                />
-                            ))}
-                        </div>
-                    )}
+                    <div style={{ display: 'flex', gap: '0.5rem', animation: 'fadeIn 0.2s' }}>
+                        {['#ef4444', '#10b981', '#3b82f6', '#f59e0b', '#ffffff'].map(c => (
+                            <button
+                                key={c}
+                                onClick={() => setColor(c)}
+                                style={{
+                                    width: '26px',
+                                    height: '26px',
+                                    borderRadius: '13px',
+                                    backgroundColor: c,
+                                    border: color === c ? '2px solid var(--text-primary)' : '1px solid transparent',
+                                    cursor: 'pointer',
+                                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                                    transition: 'transform 0.1s'
+                                }}
+                                aria-label={`Select color ${c}`}
+                            />
+                        ))}
+                    </div>
                 </div>
 
                 {/* Right: History Actions */}
@@ -383,13 +360,6 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo }) => {
                     </button>
                 )}
                 <button
-                    className="btn"
-                    onClick={() => setShowNoteModal(true)}
-                    style={{ flex: 1, padding: '0.8rem 0.5rem', fontSize: '0.9rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.4rem' }}
-                >
-                    {notes ? <><Edit2 size={16} /> Edit</> : <><MessageSquare size={16} /> Note</>}
-                </button>
-                <button
                     className="btn btn-primary"
                     onClick={handleSave}
                     disabled={isSaving}
@@ -398,39 +368,6 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo }) => {
                     {isSaving ? 'Saving...' : 'Save'}
                 </button>
             </div>
-
-            {/* Notes Modal Overlay */}
-            {showNoteModal && (
-                <div style={{
-                    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                    backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 3000,
-                    display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '1rem',
-                    animation: 'fadeIn 0.2s ease-out'
-                }}>
-                    <div style={{
-                        backgroundColor: 'var(--surface)', width: '100%', maxWidth: '400px',
-                        borderRadius: '12px', padding: '1.5rem', display: 'flex', flexDirection: 'column',
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.5)'
-                    }}>
-                        <h3 style={{ margin: '0 0 1rem 0', color: 'var(--text-primary)' }}>Project Notes</h3>
-                        <textarea
-                            autoFocus
-                            placeholder="Append notes (e.g., 'Network rack rough-in complete')"
-                            value={notes}
-                            onChange={e => setNotes(e.target.value)}
-                            style={{
-                                width: '100%', height: '120px', backgroundColor: 'var(--background)',
-                                color: 'var(--text-primary)', border: '1px solid var(--primary-color)',
-                                borderRadius: '8px', padding: '1rem', fontFamily: 'inherit',
-                                fontSize: '1rem', resize: 'none', marginBottom: '1.5rem'
-                            }}
-                        />
-                        <button className="btn btn-primary" onClick={() => setShowNoteModal(false)} style={{ padding: '0.8rem' }}>
-                            Done
-                        </button>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };
