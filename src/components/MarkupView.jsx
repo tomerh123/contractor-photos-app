@@ -212,7 +212,7 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo, returnVie
         }
 
         setIsSaving(false);
-        navigateTo(returnView, projectId);
+        navigateTo(returnView, projectId, null, editingPhotoId);
     };
 
     return (
@@ -345,7 +345,7 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo, returnVie
             <div style={{ flex: 'none', display: 'flex', gap: '0.5rem', padding: '1rem 1rem max(1rem, env(safe-area-inset-bottom))', backgroundColor: 'var(--surface)', borderTop: '1px solid var(--border)' }}>
                 <button
                     className="btn"
-                    onClick={() => navigateTo(returnView, projectId)}
+                    onClick={() => navigateTo(returnView, projectId, null, editingPhotoId)}
                     style={{ flex: 1, padding: '0.8rem 0.5rem', fontSize: '0.9rem' }}
                 >
                     Cancel
