@@ -43,12 +43,12 @@ function App() {
             <div className="app-container">
                 {currentView === 'HOME' && <ProjectList navigateTo={navigateTo} />}
                 {currentView === 'ALL_PROJECTS' && <AllProjectsView navigateTo={navigateTo} />}
-                {currentView === 'PROJECT_DETAIL' && <ProjectDetail projectId={selectedProjectId} navigateTo={navigateTo} />}
+                {currentView === 'PROJECT_DETAIL' && <ProjectDetail projectId={selectedProjectId} navigateTo={navigateTo} initialPhotoId={editingPhotoId} />}
                 {currentView === 'CAMERA' && <CameraView projectId={selectedProjectId} navigateTo={navigateTo} />}
                 {currentView === 'MARKUP' && <MarkupView projectId={selectedProjectId} photoUrl={capturedPhotoUrl} editingPhotoId={editingPhotoId} navigateTo={navigateTo} returnView={markupReturnView} />}
-                {currentView === 'RECENT_PHOTOS' && <AllPhotosView navigateTo={navigateTo} />}
+                {currentView === 'RECENT_PHOTOS' && <AllPhotosView navigateTo={navigateTo} initialPhotoId={editingPhotoId} />}
 
-                {currentView === 'MY_MARKUPS' && <MyMarkupsView navigateTo={navigateTo} />}
+                {currentView === 'MY_MARKUPS' && <MyMarkupsView navigateTo={navigateTo} initialPhotoId={editingPhotoId} />}
                 {currentView === 'SETTINGS' && <PlaceholderView title="Settings" type="settings" navigateTo={navigateTo} />}
                 {currentView === 'PROFILE' && <ProfileView navigateTo={navigateTo} />}
 
