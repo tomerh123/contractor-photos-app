@@ -148,7 +148,7 @@ const MyMarkupsView = ({ navigateTo, initialPhotoId }) => {
                                     <div style={{
                                         position: 'absolute',
                                         top: '6px', left: '6px',
-                                        background: 'rgba(0,0,0,0.5)',
+                                        background: '#000000',
                                         color: 'white',
                                         fontSize: '0.65rem',
                                         fontWeight: '500',
@@ -158,7 +158,6 @@ const MyMarkupsView = ({ navigateTo, initialPhotoId }) => {
                                         overflow: 'hidden',
                                         textOverflow: 'ellipsis',
                                         maxWidth: 'calc(100% - 12px)',
-                                        backdropFilter: 'blur(8px)',
                                         display: 'flex',
                                         alignItems: 'center',
                                         gap: '4px',

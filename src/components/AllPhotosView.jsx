@@ -188,7 +188,7 @@ const AllPhotosView = ({ navigateTo, initialPhotoId }) => {
                                         alignItems: 'flex-start'
                                     }}>
                                         <div style={{
-                                            background: 'rgba(0, 0, 0, 0.65)',
+                                            background: '#000000',
                                             color: 'white',
                                             fontSize: '0.65rem',
                                             fontWeight: '500',
@@ -198,7 +198,6 @@ const AllPhotosView = ({ navigateTo, initialPhotoId }) => {
                                             overflow: 'hidden',
                                             textOverflow: 'ellipsis',
                                             maxWidth: '100%',
-                                            backdropFilter: 'blur(4px)',
                                             border: '1px solid rgba(255,255,255,0.1)'
                                         }}>
                                             {getProjectName(photo.ProjectID)}
