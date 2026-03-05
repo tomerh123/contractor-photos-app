@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import * as db from '../db';
 import PhotoViewer from './PhotoViewer';
-import { ArrowLeft, ArrowUp, ArrowDown } from 'lucide-react';
+import { ArrowLeft, ArrowUp, ArrowDown, ChevronDown, Check } from 'lucide-react';
 
 const AllPhotosView = ({ navigateTo, initialPhotoId }) => {
     const [photos, setPhotos] = useState(() => db.getCachedAllPhotos() || []);
@@ -14,6 +14,7 @@ const AllPhotosView = ({ navigateTo, initialPhotoId }) => {
     const [projects, setProjects] = useState(() => db.getCachedAllProjects() || []);
     const [folders, setFolders] = useState(() => db.getCachedAllFolders() || []);
     const [activeTagFilter, setActiveTagFilter] = useState('All');
+    const [showTagDropdown, setShowTagDropdown] = useState(false);
 
     const openPhotoViewer = (photo) => {
         setSelectedPhoto(photo);
@@ -135,32 +136,41 @@ const AllPhotosView = ({ navigateTo, initialPhotoId }) => {
                     <>
                         {/* Tag Filters */}
                         {uniqueTags.length > 0 && (
-                            <div className="hide-scrollbar" style={{ display: 'flex', gap: '0.4rem', overflowX: 'auto', paddingBottom: '1rem', margin: '0 -1.5rem', paddingLeft: '1.5rem', paddingRight: '1.5rem' }}>
-                                <div
-                                    onClick={() => setActiveTagFilter('All')}
-                                    style={{
-                                        padding: '0.3rem 0.8rem', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
-                                        backgroundColor: activeTagFilter === 'All' ? 'var(--text-primary)' : 'var(--background)',
-                                        color: activeTagFilter === 'All' ? 'var(--background)' : 'var(--text-secondary)',
-                                        border: activeTagFilter === 'All' ? '1px solid var(--text-primary)' : '1px solid var(--border)'
-                                    }}
+                            <div style={{ position: 'relative', marginBottom: '1rem', padding: '0 1.5rem', marginTop: '1rem' }}>
+                                <button
+                                    onClick={() => setShowTagDropdown(v => !v)}
+                                    style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '10px', padding: '8px 14px', cursor: 'pointer', color: 'var(--text-primary)', fontSize: '0.9rem', fontWeight: 600, width: '100%', justifyContent: 'space-between' }}
                                 >
-                                    All Photos
-                                </div>
-                                {uniqueTags.map(tag => (
-                                    <div
-                                        key={tag}
-                                        onClick={() => setActiveTagFilter(tag)}
-                                        style={{
-                                            padding: '0.3rem 0.8rem', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
-                                            backgroundColor: activeTagFilter === tag ? 'var(--primary-color)' : 'var(--background)',
-                                            color: activeTagFilter === tag ? 'white' : 'var(--text-secondary)',
-                                            border: activeTagFilter === tag ? '1px solid var(--primary-color)' : '1px solid var(--border)'
-                                        }}
-                                    >
-                                        #{tag}
-                                    </div>
-                                ))}
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <span style={{ color: 'var(--text-secondary)', fontWeight: 400 }}>Filter:</span>
+                                        <span style={{ color: activeTagFilter === 'All' ? 'var(--text-primary)' : 'var(--primary-color)' }}>
+                                            {activeTagFilter === 'All' ? 'All Photos' : `#${activeTagFilter}`}
+                                        </span>
+                                    </span>
+                                    <ChevronDown size={16} color="var(--text-secondary)" style={{ transform: showTagDropdown ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+                                </button>
+
+                                {showTagDropdown && (
+                                    <>
+                                        {/* Backdrop */}
+                                        <div onClick={() => setShowTagDropdown(false)} style={{ position: 'fixed', inset: 0, zIndex: 50 }} />
+                                        {/* Panel */}
+                                        <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: '1.5rem', right: '1.5rem', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden', zIndex: 51, boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}>
+                                            {['All', ...uniqueTags].map(tag => (
+                                                <div
+                                                    key={tag}
+                                                    onClick={() => { setActiveTagFilter(tag); setShowTagDropdown(false); }}
+                                                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border)', backgroundColor: activeTagFilter === tag ? 'rgba(249,115,22,0.1)' : 'transparent' }}
+                                                >
+                                                    <span style={{ fontSize: '0.9rem', fontWeight: 600, color: activeTagFilter === tag ? 'var(--primary-color)' : 'var(--text-primary)' }}>
+                                                        {tag === 'All' ? 'All Photos' : `#${tag}`}
+                                                    </span>
+                                                    {activeTagFilter === tag && <Check size={16} color="var(--primary-color)" />}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         )}
 
