@@ -60,7 +60,7 @@ const AllProjectsView = ({ navigateTo }) => {
     });
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', backgroundColor: 'var(--background)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: 'var(--background)' }}>
             <header className="header" style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '64px', borderBottom: '1px solid var(--border)' }}>
                 <button
                     onClick={() => navigateTo('HOME')}

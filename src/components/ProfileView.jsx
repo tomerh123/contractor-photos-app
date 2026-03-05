@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../AppContext';
-import { X, Camera, Edit2, Check } from 'lucide-react';
+import { X, Camera, Edit2, Check, LogOut, AlertTriangle } from 'lucide-react';
+import { auth } from '../firebase';
+import { signOut, deleteUser } from 'firebase/auth';
+import * as db from '../db';
 
 // Reusable Info Item Component
 const InfoItem = ({ label, value, isEditing, onChange }) => (
@@ -60,6 +63,13 @@ const ProfileView = ({ navigateTo }) => {
     const { currentUser, updateCurrentUser } = useApp();
 
     const [isEditing, setIsEditing] = useState(false);
+    const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
+
+    // Account Deletion States
+    const [showDeleteAccountConfirm, setShowDeleteAccountConfirm] = useState(false);
+    const [showDeleteAccountDoubleConfirm, setShowDeleteAccountDoubleConfirm] = useState(false);
+    const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+
     const [formData, setFormData] = useState({ ...currentUser });
 
     useEffect(() => {
@@ -78,6 +88,40 @@ const ProfileView = ({ navigateTo }) => {
 
     const handleChange = (field, value) => {
         setFormData(prev => ({ ...prev, [field]: value }));
+    };
+
+    const handleSignOut = async () => {
+        try {
+            await signOut(auth);
+            // AppContext will see auth change, set currentUser = null, and OnboardingView will show.
+        } catch (error) {
+            console.error("Error signing out", error);
+        }
+    };
+
+    const handleDeleteAccount = async () => {
+        setIsDeletingAccount(true);
+        try {
+            // Unrecoverable data wipe
+            await db.completelyDeleteUserAccount();
+            const user = auth.currentUser;
+            if (user) {
+                await deleteUser(user);
+            }
+            // User is wiped. AppContext will react to the user vanishing and kick us to Onboarding.
+        } catch (error) {
+            console.error("Error deleting account:", error);
+            if (error.code === 'auth/requires-recent-login') {
+                alert("For security reasons, Firebase requires a fresh login to delete an account. You will now be logged out so you can log back in and try again.");
+                await signOut(auth);
+            } else {
+                alert("An error occurred while deleting your account. Please log out, log back in, and try again.");
+            }
+        } finally {
+            setIsDeletingAccount(false);
+            setShowDeleteAccountDoubleConfirm(false);
+            setShowDeleteAccountConfirm(false);
+        }
     };
 
     const getInitials = (nameStr) => {
@@ -184,6 +228,116 @@ const ProfileView = ({ navigateTo }) => {
                     options={['General Contractor', 'Electrical', 'Low Voltage', 'Plumbing', 'HVAC', 'Framing', 'Drywall', 'Painting', 'Roofing', 'Landscaping', 'Other']}
                 />
             </InfoSection>
+
+            <div style={{ padding: '2rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center' }}>
+                <button
+                    onClick={() => setShowSignOutConfirm(true)}
+                    style={{
+                        display: 'flex', alignItems: 'center', gap: '8px',
+                        padding: '12px 24px', borderRadius: '8px',
+                        backgroundColor: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.3)',
+                        color: 'var(--primary-color)', fontSize: '1rem', fontWeight: 'bold',
+                        cursor: 'pointer', width: '100%', justifyContent: 'center'
+                    }}
+                >
+                    <LogOut size={18} /> Sign Out
+                </button>
+
+                <button
+                    onClick={() => setShowDeleteAccountConfirm(true)}
+                    style={{
+                        display: 'flex', alignItems: 'center', gap: '8px',
+                        padding: '12px 24px', borderRadius: '8px',
+                        backgroundColor: 'transparent', border: '1px solid rgba(239, 68, 68, 0.1)',
+                        color: 'rgba(239, 68, 68, 0.8)', fontSize: '0.9rem', fontWeight: 'bold',
+                        cursor: 'pointer', width: '100%', justifyContent: 'center'
+                    }}
+                >
+                    <AlertTriangle size={18} /> Delete Account
+                </button>
+            </div>
+
+            {/* Sign Out Confirmation Modal */}
+            {
+                showSignOutConfirm && (
+                    <div className="modal-overlay" onClick={(e) => { e.stopPropagation(); setShowSignOutConfirm(false); }} style={{ zIndex: 1000, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', padding: '1.5rem' }}>
+                        <div className="modal-content" onClick={e => e.stopPropagation()} style={{ padding: '2rem', textAlign: 'center', maxWidth: '300px', borderRadius: '24px' }}>
+                            <div style={{ backgroundColor: 'rgba(56, 189, 248, 0.1)', color: 'var(--primary-color)', width: '56px', height: '56px', borderRadius: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem auto' }}>
+                                <LogOut size={28} />
+                            </div>
+                            <h2 style={{ fontSize: '1.2rem', marginBottom: '0.8rem' }}>Sign Out?</h2>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', marginBottom: '1.5rem', lineHeight: '1.4' }}>
+                                Are you sure you want to sign out of your account?
+                            </p>
+                            <div style={{ display: 'flex', gap: '0.8rem' }}>
+                                <button type="button" className="btn" onClick={(e) => { e.stopPropagation(); setShowSignOutConfirm(false); }} style={{ flex: 1, backgroundColor: 'var(--surface-hover)', border: 'none' }}>
+                                    Cancel
+                                </button>
+                                <button type="button" className="btn"
+                                    onClick={handleSignOut}
+                                    style={{ flex: 1, backgroundColor: 'var(--primary-color)', color: 'white', border: 'none' }}>
+                                    Sign Out
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+            {/* Delete Account Stage 1 Modal */}
+            {
+                showDeleteAccountConfirm && !showDeleteAccountDoubleConfirm && (
+                    <div className="modal-overlay" onClick={(e) => { e.stopPropagation(); setShowDeleteAccountConfirm(false); }} style={{ zIndex: 1000, backgroundColor: 'rgba(0,0,0,0.8)', alignItems: 'center', padding: '1.5rem' }}>
+                        <div className="modal-content" onClick={e => e.stopPropagation()} style={{ padding: '2rem', textAlign: 'center', maxWidth: '300px', borderRadius: '24px', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                            <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', width: '56px', height: '56px', borderRadius: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem auto' }}>
+                                <AlertTriangle size={28} />
+                            </div>
+                            <h2 style={{ fontSize: '1.2rem', marginBottom: '0.8rem', color: '#ef4444' }}>Delete Account?</h2>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', marginBottom: '1.5rem', lineHeight: '1.4' }}>
+                                This will permanently delete your profile, projects, photos, and all data from our servers. This action <strong>cannot</strong> be undone.
+                            </p>
+                            <div style={{ display: 'flex', gap: '0.8rem' }}>
+                                <button type="button" className="btn" onClick={(e) => { e.stopPropagation(); setShowDeleteAccountConfirm(false); }} style={{ flex: 1, backgroundColor: 'var(--surface-hover)', border: 'none' }}>
+                                    Cancel
+                                </button>
+                                <button type="button" className="btn"
+                                    onClick={() => setShowDeleteAccountDoubleConfirm(true)}
+                                    style={{ flex: 1, backgroundColor: '#ef4444', color: 'white', border: 'none' }}>
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+            {/* Delete Account Stage 2 (Double Confirm) Modal */}
+            {
+                showDeleteAccountDoubleConfirm && (
+                    <div className="modal-overlay" onClick={(e) => { e.stopPropagation(); setShowDeleteAccountDoubleConfirm(false); setShowDeleteAccountConfirm(false); }} style={{ zIndex: 1001, backgroundColor: 'rgba(239, 68, 68, 0.9)', alignItems: 'center', padding: '1.5rem' }}>
+                        <div className="modal-content" onClick={e => e.stopPropagation()} style={{ padding: '2rem', textAlign: 'center', maxWidth: '300px', borderRadius: '24px', backgroundColor: '#000', border: '2px solid #ef4444' }}>
+                            <div style={{ color: '#ef4444', margin: '0 auto 1.5rem auto' }}>
+                                <AlertTriangle size={48} />
+                            </div>
+                            <h2 style={{ fontSize: '1.4rem', marginBottom: '0.8rem', color: 'white' }}>Final Warning</h2>
+                            <p style={{ color: '#ef4444', fontSize: '1rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+                                Are you absolutely sure?
+                            </p>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1.5rem', lineHeight: '1.4' }}>
+                                All of your data will be instantly completely wiped from existence.
+                            </p>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                                <button type="button" className="btn"
+                                    onClick={handleDeleteAccount}
+                                    disabled={isDeletingAccount}
+                                    style={{ width: '100%', backgroundColor: '#ef4444', color: 'white', border: 'none', padding: '1rem', fontWeight: 'bold' }}>
+                                    {isDeletingAccount ? 'Wiping Data...' : 'I Understand, Wipe Everything'}
+                                </button>
+                                <button type="button" className="btn" onClick={(e) => { e.stopPropagation(); setShowDeleteAccountDoubleConfirm(false); setShowDeleteAccountConfirm(false); }} style={{ width: '100%', backgroundColor: 'var(--surface-hover)', border: 'none' }} disabled={isDeletingAccount}>
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
         </div>
     );

@@ -6,8 +6,11 @@ import './index.css'
 // Register Service Worker for PWA
 import { registerSW } from 'virtual:pwa-register'
 const updateSW = registerSW({
-    onNeedRefresh() { },
-    onOfflineReady() { },
+    onNeedRefresh() {
+        // Aggressively auto-update clients to break old cache loops
+        updateSW(true)
+    },
+    immediate: true
 })
 
 ReactDOM.createRoot(document.getElementById('root')).render(

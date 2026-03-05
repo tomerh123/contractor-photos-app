@@ -1,6 +1,6 @@
 :root {
-  --primary-color: #38bdf8;
-  --primary-color-dark: #0284c7;
+  --primary-color: #f97316;
+  --primary-color-dark: #ea6c0c;
 
   --background: #0f1115;
   --surface: #1e2128;
@@ -16,14 +16,21 @@
 
   --danger: #ef4444;
   --success: #10b981;
-  --accent-teal: #2dd4bf;
-  --accent-teal-bg: rgba(45, 212, 191, 0.15);
+  --accent-teal: #fbbf24;
+  --accent-teal-bg: rgba(251, 191, 36, 0.15);
 }
 
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior-y: none;
 }
 
 body {
@@ -34,13 +41,17 @@ body {
 }
 
 .app-container {
-  min-height: 100dvh;
+  height: 100dvh;
   width: 100%;
   max-width: 600px;
   margin: 0 auto;
   position: relative;
   background-color: var(--background);
   overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 /* Typography */
@@ -121,7 +132,7 @@ p {
 /* Floating Action Dock */
 .floating-dock {
   position: fixed;
-  bottom: 2rem;
+  bottom: calc(2rem + env(safe-area-inset-bottom));
   left: 50%;
   transform: translateX(-50%);
   background-color: rgba(30, 33, 40, 0.95);
@@ -172,19 +183,10 @@ p {
   backdrop-filter: blur(5px);
   z-index: 1000;
   display: flex;
-  align-items: flex-start;
-  /* Align closer to the top to avoid keyboard */
+  align-items: center;
   justify-content: center;
-  padding: 4rem 1.5rem 1.5rem 1.5rem;
+  padding: 1.5rem;
   overflow-y: auto;
-  /* Allow scrolling if it still overflows */
-}
-
-@media (max-width: 768px) {
-  .modal-overlay {
-    padding-top: 2rem;
-    /* Push modal higher on mobile to make room for keyboard */
-  }
 }
 
 .modal-content {

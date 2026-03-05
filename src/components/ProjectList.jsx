@@ -311,92 +311,95 @@ const ProjectList = ({ navigateTo }) => {
                 <div className="modal-overlay" onClick={() => setShowCameraProjectSelector(false)}>
                     <div className="modal-content" onClick={e => e.stopPropagation()}>
                         <h2 style={{ marginBottom: '1.5rem', fontSize: '1.3rem' }}>Select a Project</h2>
-                        {projects.length === 0 ? (
-                            <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', textAlign: 'center' }}>
-                                Create a project first before taking photos.
-                            </p>
-                        ) : (
-                            <div className="hide-scrollbar" style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', maxHeight: '350px', overflowY: 'auto', marginBottom: '1.5rem', padding: '0.2rem' }}>
-                                {isLocating && (
-                                    <div style={{ padding: '0.8rem', textAlign: 'center', backgroundColor: 'rgba(56, 189, 248, 0.1)', color: 'var(--primary-color)', borderRadius: '12px', fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                                        <div style={{ width: '12px', height: '12px', border: '2px solid var(--primary-color)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-                                        Detecting nearby projects...
-                                    </div>
-                                )}
 
-                                <button
-                                    onClick={() => {
-                                        setShowCameraProjectSelector(false);
-                                        setIsCreatingFromCamera(true);
-                                        setShowModal(true);
-                                    }}
-                                    style={{
-                                        display: 'flex', alignItems: 'center', textAlign: 'left', padding: '1rem',
-                                        backgroundColor: 'var(--surface)', border: '1px dashed var(--border)',
-                                        borderRadius: '12px', cursor: 'pointer', width: '100%',
-                                        transition: 'background-color 0.2s',
-                                    }}
-                                >
-                                    <div style={{ marginRight: '1rem', width: '24px', height: '24px', borderRadius: '12px', backgroundColor: 'var(--primary-color)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <Plus size={16} />
-                                    </div>
-                                    <div style={{ fontWeight: 'bold', color: 'var(--text-primary)', fontSize: '1.05rem' }}>Create New Project</div>
-                                </button>
+                        <div className="hide-scrollbar" style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', maxHeight: '350px', overflowY: 'auto', marginBottom: '1.5rem', padding: '0.2rem' }}>
+                            <button
+                                onClick={() => {
+                                    setShowCameraProjectSelector(false);
+                                    setIsCreatingFromCamera(true);
+                                    setShowModal(true);
+                                }}
+                                style={{
+                                    display: 'flex', alignItems: 'center', textAlign: 'left', padding: '1rem',
+                                    backgroundColor: 'var(--surface)', border: '1px dashed var(--border)',
+                                    borderRadius: '12px', cursor: 'pointer', width: '100%',
+                                    transition: 'background-color 0.2s',
+                                }}
+                            >
+                                <div style={{ marginRight: '1rem', width: '24px', height: '24px', borderRadius: '12px', backgroundColor: 'var(--primary-color)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Plus size={16} />
+                                </div>
+                                <div style={{ fontWeight: 'bold', color: 'var(--text-primary)', fontSize: '1.05rem' }}>Create New Project</div>
+                            </button>
 
-                                {nearbyProject && (
-                                    <button
-                                        onClick={() => {
-                                            setShowCameraProjectSelector(false);
-                                            navigateTo('CAMERA', nearbyProject.ProjectID);
-                                        }}
-                                        style={{
-                                            display: 'flex', alignItems: 'center', textAlign: 'left', padding: '1rem',
-                                            backgroundColor: 'rgba(34, 197, 94, 0.05)',
-                                            border: '1px solid rgba(34, 197, 94, 0.5)',
-                                            borderRadius: '12px', cursor: 'pointer', width: '100%',
-                                            position: 'relative', overflow: 'hidden'
-                                        }}
-                                    >
-                                        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', backgroundColor: '#22c55e' }}></div>
-                                        <span style={{ marginRight: '1rem', color: '#22c55e' }}>
-                                            <MapPin size={24} />
-                                        </span>
-                                        <div>
-                                            <div style={{ fontWeight: 'bold', color: 'var(--text-primary)', fontSize: '1.05rem' }}>{nearbyProject.ProjectName}</div>
-                                            <div style={{ fontSize: '0.85rem', color: '#22c55e', marginTop: '0.2rem', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
-                                                📍 You are here
-                                            </div>
+                            {projects.length === 0 ? (
+                                <p style={{ color: 'var(--text-secondary)', marginTop: '1rem', textAlign: 'center' }}>
+                                    No active projects found.
+                                </p>
+                            ) : (
+                                <>
+                                    {isLocating && (
+                                        <div style={{ padding: '0.8rem', textAlign: 'center', backgroundColor: 'rgba(56, 189, 248, 0.1)', color: 'var(--primary-color)', borderRadius: '12px', fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                                            <div style={{ width: '12px', height: '12px', border: '2px solid var(--primary-color)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                                            Detecting nearby projects...
                                         </div>
-                                    </button>
-                                )}
+                                    )}
 
-                                {projects.filter(p => !nearbyProject || p.ProjectID !== nearbyProject.ProjectID).map(p => (
-                                    <button
-                                        key={p.ProjectID}
-                                        onClick={() => {
-                                            setShowCameraProjectSelector(false);
-                                            navigateTo('CAMERA', p.ProjectID);
-                                        }}
-                                        style={{
-                                            display: 'flex', alignItems: 'center', textAlign: 'left', padding: '1rem',
-                                            backgroundColor: 'var(--background)', border: '1px solid var(--border)',
-                                            borderRadius: '12px', cursor: 'pointer', width: '100%',
-                                            transition: 'border-color 0.2s',
-                                        }}
-                                    >
-                                        <span style={{ marginRight: '1rem', color: 'var(--primary-color)' }}>
-                                            <Folder size={24} />
-                                        </span>
-                                        <div>
-                                            <div style={{ fontWeight: 'bold', color: 'var(--text-primary)', fontSize: '1.05rem' }}>{p.ProjectName}</div>
-                                            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.2rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                <MapPin size={12} /> {p.Location}
+                                    {nearbyProject && (
+                                        <button
+                                            onClick={() => {
+                                                setShowCameraProjectSelector(false);
+                                                navigateTo('CAMERA', nearbyProject.ProjectID);
+                                            }}
+                                            style={{
+                                                display: 'flex', alignItems: 'center', textAlign: 'left', padding: '1rem',
+                                                backgroundColor: 'rgba(34, 197, 94, 0.05)',
+                                                border: '1px solid rgba(34, 197, 94, 0.5)',
+                                                borderRadius: '12px', cursor: 'pointer', width: '100%',
+                                                position: 'relative', overflow: 'hidden'
+                                            }}
+                                        >
+                                            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', backgroundColor: '#22c55e' }}></div>
+                                            <span style={{ marginRight: '1rem', color: '#22c55e' }}>
+                                                <MapPin size={24} />
+                                            </span>
+                                            <div>
+                                                <div style={{ fontWeight: 'bold', color: 'var(--text-primary)', fontSize: '1.05rem' }}>{nearbyProject.ProjectName}</div>
+                                                <div style={{ fontSize: '0.85rem', color: '#22c55e', marginTop: '0.2rem', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
+                                                    📍 You are here
+                                                </div>
                                             </div>
-                                        </div>
-                                    </button>
-                                ))}
-                            </div>
-                        )}
+                                        </button>
+                                    )}
+
+                                    {projects.filter(p => !nearbyProject || p.ProjectID !== nearbyProject.ProjectID).map(p => (
+                                        <button
+                                            key={p.ProjectID}
+                                            onClick={() => {
+                                                setShowCameraProjectSelector(false);
+                                                navigateTo('CAMERA', p.ProjectID);
+                                            }}
+                                            style={{
+                                                display: 'flex', alignItems: 'center', textAlign: 'left', padding: '1rem',
+                                                backgroundColor: 'var(--background)', border: '1px solid var(--border)',
+                                                borderRadius: '12px', cursor: 'pointer', width: '100%',
+                                                transition: 'border-color 0.2s',
+                                            }}
+                                        >
+                                            <span style={{ marginRight: '1rem', color: 'var(--primary-color)' }}>
+                                                <Folder size={24} />
+                                            </span>
+                                            <div>
+                                                <div style={{ fontWeight: 'bold', color: 'var(--text-primary)', fontSize: '1.05rem' }}>{p.ProjectName}</div>
+                                                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.2rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                    <MapPin size={12} /> {p.Location}
+                                                </div>
+                                            </div>
+                                        </button>
+                                    ))}
+                                </>
+                            )}
+                        </div>
                         <button className="btn" onClick={() => setShowCameraProjectSelector(false)} style={{ width: '100%' }}>
                             Cancel
                         </button>

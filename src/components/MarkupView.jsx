@@ -1,22 +1,24 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useApp } from '../AppContext';
 import * as db from '../db';
-import { PenTool, Undo2, Eraser, MessageSquare, Edit2, RotateCcw } from 'lucide-react';
+import { PenTool, Undo2, MessageSquare, Edit2, Trash2 } from 'lucide-react';
+import TagSelector from './TagSelector';
 
-const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo, returnView = 'PROJECT_DETAIL' }) => {
+const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo, returnView = 'PROJECT_DETAIL', currentFolderId }) => {
     const canvasRef = useRef(null);
     const containerRef = useRef(null);
     const { currentUser } = useApp();
 
     const [notes, setNotes] = useState('');
+    const [selectedTags, setSelectedTags] = useState([]);
     const [isDrawing, setIsDrawing] = useState(false);
     const [isDrawMode, setIsDrawMode] = useState(true);
     const [color, setColor] = useState('#ef4444');
     const [isSaving, setIsSaving] = useState(false);
     const [history, setHistory] = useState([]);
 
-    // Original photo tracking to allow reverting markups
     const [originalPhotoUrl, setOriginalPhotoUrl] = useState(photoUrl);
+    const [isCanvasReady, setIsCanvasReady] = useState(false);
 
     useEffect(() => {
         if (editingPhotoId) {
@@ -25,6 +27,7 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo, returnVie
                 const existingPhoto = projPhotos.find(p => p.PhotoID === editingPhotoId);
                 if (existingPhoto) {
                     if (existingPhoto.Notes) setNotes(existingPhoto.Notes);
+                    if (existingPhoto.Tags) setSelectedTags(existingPhoto.Tags);
 
                     // Keep track of the clean unedited photo if it has one, otherwise the first save sets it
                     setOriginalPhotoUrl(existingPhoto.OriginalImageFile || existingPhoto.ImageFile);
@@ -44,6 +47,7 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo, returnVie
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d');
         const img = new Image();
+        img.crossOrigin = "anonymous";
 
         img.onload = () => {
             canvas.width = img.width;
@@ -57,6 +61,7 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo, returnVie
             ctx.lineWidth = Math.max(4, canvas.width * 0.012);
 
             setHistory([canvas.toDataURL('image/jpeg', 1.0)]);
+            setIsCanvasReady(true);
         };
         img.src = photoUrl;
     }, [photoUrl]);
@@ -104,6 +109,7 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo, returnVie
         setHistory(newHistory);
 
         const img = new Image();
+        img.crossOrigin = "anonymous";
         img.onload = () => {
             const canvas = canvasRef.current;
             const ctx = canvas.getContext('2d');
@@ -117,31 +123,12 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo, returnVie
         img.src = previousState;
     };
 
-    const handleClear = () => {
-        if (history.length <= 1) return;
-
-        const baseImage = history[0];
-        setHistory([baseImage]);
-
-        const img = new Image();
-        img.onload = () => {
-            const canvas = canvasRef.current;
-            const ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(img, 0, 0);
-
-            ctx.lineJoin = 'round';
-            ctx.lineCap = 'round';
-            ctx.lineWidth = Math.max(4, canvas.width * 0.012);
-        };
-        img.src = baseImage;
-    };
-
     // Completely wipe all markups ever made to the picture by loading the original unedited photo
     const handleRestoreOriginal = () => {
         if (!originalPhotoUrl) return;
 
         const img = new Image();
+        img.crossOrigin = "anonymous";
         img.onload = () => {
             const canvas = canvasRef.current;
             const ctx = canvas.getContext('2d');
@@ -186,7 +173,7 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo, returnVie
 
     const handleSave = async () => {
         setIsSaving(true);
-        const modifiedPhotoUrl = canvasRef.current.toDataURL('image/jpeg', 0.85);
+        const modifiedPhotoUrl = canvasRef.current.toDataURL('image/jpeg', 0.6);
 
         // If the current history stack's base image is the original AND no new strokes were drawn, it's not marked up.
         // (However, photoUrl passed in might be the ALREADY marked up one, so we check against originalPhotoUrl)
@@ -196,7 +183,7 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo, returnVie
         }
 
         if (editingPhotoId) {
-            await db.updatePhoto(editingPhotoId, modifiedPhotoUrl, notes, isCurrentlyMarkedUp, originalPhotoUrl);
+            await db.updatePhoto(editingPhotoId, modifiedPhotoUrl, notes, isCurrentlyMarkedUp, originalPhotoUrl, selectedTags);
         } else {
             const newPhoto = {
                 PhotoID: `photo-${Date.now()}`,
@@ -204,23 +191,40 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo, returnVie
                 ImageFile: modifiedPhotoUrl,
                 OriginalImageFile: originalPhotoUrl,
                 Timestamp: new Date().toISOString(),
-                UploaderID: currentUser.UserID,
+                UploaderID: currentUser?.uid,
                 Notes: notes,
+                Tags: selectedTags,
                 IsMarkedUp: isCurrentlyMarkedUp
             };
+
+            // Dynamically attach tracking FolderID if the user was standing inside an album when taking the photo
+            if (currentFolderId) {
+                newPhoto.FolderID = currentFolderId;
+            }
+
             await db.addPhoto(newPhoto);
         }
 
         setIsSaving(false);
-        navigateTo(returnView, projectId, null, editingPhotoId);
+        navigateTo(returnView, projectId, null, null);
     };
 
     return (
         <div className="markup-view" style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 3000,
             display: 'flex',
             flexDirection: 'column',
-            height: '100dvh',
-            backgroundColor: 'var(--background)'
+            backgroundColor: 'var(--background)',
+            paddingTop: 'env(safe-area-inset-top)',
+            paddingBottom: 'env(safe-area-inset-bottom)',
+            opacity: isCanvasReady ? 1 : 0,
+            pointerEvents: isCanvasReady ? 'auto' : 'none',
+            transition: 'opacity 0.2s ease-out'
         }}>
             <header className="header" style={{ justifyContent: 'center' }}>
                 <h2 style={{ margin: 0, fontSize: '1.2rem' }}>Markup Photo</h2>
@@ -228,84 +232,80 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo, returnVie
 
             <div style={{
                 display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '0.5rem 1rem',
+                flexDirection: 'column',
                 backgroundColor: 'var(--surface)',
                 borderBottom: '1px solid var(--border)',
-                minHeight: '50px'
             }}>
-                <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', gap: '0.5rem', animation: 'fadeIn 0.2s' }}>
-                        {['#ef4444', '#10b981', '#3b82f6', '#f59e0b', '#ffffff'].map(c => (
-                            <button
-                                key={c}
-                                onClick={() => setColor(c)}
-                                style={{
-                                    width: '26px',
-                                    height: '26px',
-                                    borderRadius: '13px',
-                                    backgroundColor: c,
-                                    border: color === c ? '2px solid var(--text-primary)' : '1px solid transparent',
-                                    cursor: 'pointer',
-                                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                                    transition: 'transform 0.1s'
-                                }}
-                                aria-label={`Select color ${c}`}
-                            />
-                        ))}
+                {/* Row 1: Colors + Actions */}
+                <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '0.5rem 1rem',
+                    minHeight: '50px'
+                }}>
+                    <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', gap: '0.5rem', animation: 'fadeIn 0.2s' }}>
+                            {['#ef4444', '#10b981', '#3b82f6', '#f59e0b', '#ffffff'].map(c => (
+                                <button
+                                    key={c}
+                                    onClick={() => setColor(c)}
+                                    style={{
+                                        width: '26px',
+                                        height: '26px',
+                                        borderRadius: '13px',
+                                        backgroundColor: c,
+                                        border: color === c ? '2px solid var(--text-primary)' : '1px solid transparent',
+                                        cursor: 'pointer',
+                                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                                        transition: 'transform 0.1s'
+                                    }}
+                                    aria-label={`Select color ${c}`}
+                                />
+                            ))}
+                        </div>
                     </div>
-                </div>
 
-                {/* Right: History Actions */}
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    {originalPhotoUrl && originalPhotoUrl !== history[0] && (
+                    {/* Right: History Actions */}
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        {originalPhotoUrl && originalPhotoUrl !== history[0] && (
+                            <button
+                                onClick={handleRestoreOriginal}
+                                style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: 'var(--text-primary)',
+                                    cursor: 'pointer',
+                                    fontSize: '1.2rem',
+                                    padding: '0.2rem'
+                                }}
+                                aria-label="Restore Original"
+                                title="Restore Original Image"
+                            >
+                                <Trash2 size={20} />
+                            </button>
+                        )}
                         <button
-                            onClick={handleRestoreOriginal}
+                            onClick={handleUndo}
+                            disabled={history.length <= 1}
                             style={{
                                 background: 'transparent',
                                 border: 'none',
-                                color: 'var(--text-primary)',
-                                cursor: 'pointer',
+                                color: history.length <= 1 ? 'var(--border)' : 'var(--text-primary)',
+                                cursor: history.length <= 1 ? 'default' : 'pointer',
                                 fontSize: '1.2rem',
                                 padding: '0.2rem'
                             }}
-                            aria-label="Restore Original"
-                            title="Restore Original Image"
+                            aria-label="Undo"
                         >
-                            <RotateCcw size={20} />
+                            <Undo2 size={20} />
                         </button>
-                    )}
-                    <button
-                        onClick={handleUndo}
-                        disabled={history.length <= 1}
-                        style={{
-                            background: 'transparent',
-                            border: 'none',
-                            color: history.length <= 1 ? 'var(--border)' : 'var(--text-primary)',
-                            cursor: history.length <= 1 ? 'default' : 'pointer',
-                            fontSize: '1.2rem',
-                            padding: '0.2rem'
-                        }}
-                        aria-label="Undo"
-                    >
-                        <Undo2 size={20} />
-                    </button>
-                    <button
-                        onClick={handleClear}
-                        disabled={history.length <= 1}
-                        style={{
-                            background: 'transparent',
-                            border: 'none',
-                            color: history.length <= 1 ? 'var(--border)' : 'var(--text-primary)',
-                            cursor: history.length <= 1 ? 'default' : 'pointer',
-                            fontSize: '1.2rem',
-                            padding: '0.2rem'
-                        }}
-                        aria-label="Clear all"
-                    >
-                        <Eraser size={20} />
-                    </button>
+                    </div>
+                </div>
+
+                {/* Row 2: Tag Selector */}
+                <div style={{ padding: '0 1rem 0.6rem' }}>
+                    <TagSelector selectedTags={selectedTags} onTagsChange={setSelectedTags} />
                 </div>
             </div>
 
@@ -320,7 +320,10 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo, returnVie
                     alignItems: 'center',
                     overflow: 'hidden',
                     flex: 1,
-                    minHeight: 0
+                    minHeight: 0,
+                    userSelect: 'none',
+                    WebkitUserSelect: 'none',
+                    WebkitTouchCallout: 'none'
                 }}
             >
                 <canvas
@@ -336,13 +339,16 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo, returnVie
                         cursor: 'crosshair',
                         touchAction: 'none',
                         maxWidth: '100%',
-                        maxHeight: '100%'
+                        maxHeight: '100%',
+                        userSelect: 'none',
+                        WebkitUserSelect: 'none',
+                        WebkitTouchCallout: 'none'
                     }}
                 />
             </div>
 
             {/* Base UI Actions */}
-            <div style={{ flex: 'none', display: 'flex', gap: '0.5rem', padding: '1rem 1rem max(1rem, env(safe-area-inset-bottom))', backgroundColor: 'var(--surface)', borderTop: '1px solid var(--border)' }}>
+            <div style={{ flex: 'none', display: 'flex', gap: '0.5rem', padding: '1rem', backgroundColor: 'var(--surface)', borderTop: '1px solid var(--border)' }}>
                 <button
                     className="btn"
                     onClick={() => navigateTo(returnView, projectId, null, editingPhotoId)}

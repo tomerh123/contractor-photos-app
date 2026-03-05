@@ -156,7 +156,7 @@ const SharedProjectView = ({ payload }) => {
                 )}
 
                 <footer style={{ marginTop: '4rem', textAlign: 'center', padding: '2rem 0', borderTop: '1px solid #f3f4f6', color: '#9ca3af', fontSize: '0.875rem' }}>
-                    <p>Powered by ContractorPhotos</p>
+                    <p>Powered by TrueSite</p>
                 </footer>
             </main>
         </div>

@@ -1,342 +1,503 @@
-import { get as idbGet, set as idbSet } from 'idb-keyval';
+import { auth, db as firestore, storage } from './firebase';
+import { collection, doc, setDoc, getDoc, getDocs, query, where, updateDoc, deleteDoc, deleteField } from 'firebase/firestore';
+import { ref, uploadString, getDownloadURL, deleteObject } from 'firebase/storage';
 
-// Simple mock database using memory and local storage to simulate backend latency
-let mockProjects = [];
-let mockPhotos = [];
-let mockTodos = [];
-let mockProfile = null;
-let photosLoaded = false;
-let init = false;
-
-const defaultProfile = {
-    Name: 'Tomer Harel',
-    Company: 'SpicyT AV',
-    Email: 'spicytav@gmail.com',
-    Phone: '18184456361',
-    JobTitle: 'Owner',
-    Trade: 'Low Voltage'
+const getUid = () => {
+    const uid = auth.currentUser?.uid;
+    if (!uid) throw new Error("User not authenticated");
+    return uid;
 };
 
-const loadPhotos = async () => {
-    if (photosLoaded) return;
+export const initializeDB = async () => {
+    // No-op for Firebase. Handled via onAuthStateChanged.
+};
+
+// Global RAM Cache for instant backwards navigation
+let memoryCache = {
+    projects: {},
+    projectPhotos: {},
+    allProjects: null,
+    allPhotos: null,
+    allFolders: null
+};
+
+export const clearDBCache = () => {
+    memoryCache = { projects: {}, projectPhotos: {}, allProjects: null, allPhotos: null, allFolders: null };
+};
+
+export const getCachedProject = (id) => memoryCache.projects[id] || null;
+export const getCachedPhotos = (id) => memoryCache.projectPhotos[id] || null;
+export const getCachedAllProjects = () => memoryCache.allProjects || null;
+export const getCachedAllPhotos = () => memoryCache.allPhotos || null;
+export const getCachedAllFolders = () => memoryCache.allFolders || null;
+
+// --- Profile ---
+export const getProfile = async (uid) => {
+    if (!uid) return null;
     try {
-        const stored = await idbGet('contractor_photos_idb');
-        if (stored) {
-            mockPhotos = stored;
-        } else {
-            // Check legacy localStorage and migrate
-            const legacyPhotos = localStorage.getItem('contractor_photos');
-            if (legacyPhotos) {
-                const parsed = JSON.parse(legacyPhotos);
-                parsed.forEach((p, idx) => {
-                    if (!p.PhotoID) p.PhotoID = `ph_legacy_${idx}_${Date.now()}`;
-                    if (!p.Timestamp) p.Timestamp = new Date().toISOString();
-                });
-                mockPhotos = parsed;
-                await idbSet('contractor_photos_idb', mockPhotos);
-                localStorage.removeItem('contractor_photos');
-            }
+        const docRef = doc(firestore, 'users', uid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            return docSnap.data();
         }
     } catch (e) {
-        console.error('Failed to load photos from IndexedDB, falling back to localStorage', e);
-        try {
-            const fallbackPhotos = localStorage.getItem('contractor_photos_fallback');
-            if (fallbackPhotos) {
-                mockPhotos = JSON.parse(fallbackPhotos);
-            }
-        } catch (err) { }
+        console.error("Error fetching profile", e);
     }
-    photosLoaded = true;
+    return null;
 };
 
-const savePhotos = async () => {
+export const updateProfile = async (uid, updates) => {
+    if (!uid) return null;
     try {
-        await idbSet('contractor_photos_idb', mockPhotos);
+        const docRef = doc(firestore, 'users', uid);
+        await setDoc(docRef, updates, { merge: true });
+        clearDBCache();
+        return updates; // AppContext re-merges it
     } catch (e) {
-        console.error('Failed to save photos to IndexedDB, falling back to localStorage', e);
-        try {
-            localStorage.setItem('contractor_photos_fallback', JSON.stringify(mockPhotos));
-        } catch (err) {
-            console.warn('LocalStorage limit reached on fallback!', err);
-        }
+        console.error("Error updating profile", e);
+        return null;
     }
 };
 
-export const initializeDB = () => {
-    if (init) return;
-
-    // Load Projects
-    const storedProjects = localStorage.getItem('contractor_projects');
-    if (storedProjects) {
-        try {
-            mockProjects = JSON.parse(storedProjects);
-        } catch (e) { }
-    }
-
-    // Load Todos
-    const storedTodos = localStorage.getItem('contractor_todos');
-    if (storedTodos) {
-        try {
-            mockTodos = JSON.parse(storedTodos);
-        } catch (e) { }
-    }
-
-    // Load Profile
-    const storedProfile = localStorage.getItem('contractor_profile');
-    if (storedProfile) {
-        try {
-            mockProfile = JSON.parse(storedProfile);
-        } catch (e) { }
-    } else {
-        mockProfile = { ...defaultProfile };
-    }
-
-    init = true;
-};
-
-const saveToLocalStorage = () => {
-    try {
-        localStorage.setItem('contractor_projects', JSON.stringify(mockProjects));
-        localStorage.setItem('contractor_todos', JSON.stringify(mockTodos));
-        localStorage.setItem('contractor_profile', JSON.stringify(mockProfile));
-    } catch (e) {
-        console.warn('Storage limit reached, could not save local storage arrays');
-    }
-};
-
-const delay = (ms) => Promise.resolve(); // Artificial latency disabled for local performance
-
-// Utility to clean up old archives (runs when fetching projects)
-const cleanupArchivedProjects = async () => {
-    await loadPhotos();
-    let changed = false;
-    let photosChanged = false;
-    const now = new Date();
-    const thirtyDaysInMs = 30 * 24 * 60 * 60 * 1000;
-
-    for (let i = mockProjects.length - 1; i >= 0; i--) {
-        const p = mockProjects[i];
-        if (p.ArchivedAt) {
-            const archiveDate = new Date(p.ArchivedAt);
-            if (now - archiveDate > thirtyDaysInMs) {
-                // Permanently delete the project and its photos
-                const projectId = p.ProjectID;
-                mockProjects.splice(i, 1);
-
-                const oldLen = mockPhotos.length;
-                mockPhotos = mockPhotos.filter(photo => photo.ProjectID !== projectId);
-                if (mockPhotos.length !== oldLen) photosChanged = true;
-
-                changed = true;
-            }
-        }
-    }
-
-    if (changed) saveToLocalStorage();
-    if (photosChanged) await savePhotos();
-};
-
-// --- Mock DB Functions ---
-
-export const getProfile = async () => {
-    return { ...mockProfile };
-};
-
-export const updateProfile = async (updates) => {
-    mockProfile = { ...mockProfile, ...updates };
-    saveToLocalStorage();
-    return mockProfile;
-};
-
+// --- Projects ---
 export const getProjects = async () => {
-    await cleanupArchivedProjects();
-    return [...mockProjects];
+    if (memoryCache.allProjects) return memoryCache.allProjects;
+    try {
+        const q = query(collection(firestore, 'projects'), where("userId", "==", getUid()));
+        const snapshot = await getDocs(q);
+        const projects = snapshot.docs.map(doc => doc.data());
+        memoryCache.allProjects = projects;
+        return memoryCache.allProjects;
+    } catch (e) {
+        console.error("Error getting projects", e);
+        return [];
+    }
 };
 
 export const getProject = async (id) => {
-    return mockProjects.find(p => p.ProjectID === id);
-};
-
-export const getPhotosForProject = async (projectId) => {
-    await loadPhotos();
-    // Sort oldest first (chronological) consistently with Apple Photos
-    return mockPhotos.filter(photo => photo.ProjectID === projectId).sort((a, b) => new Date(a.Timestamp) - new Date(b.Timestamp));
-};
-
-export const getAllPhotos = async () => {
-    await loadPhotos();
-    return [...mockPhotos].sort((a, b) => new Date(b.Timestamp) - new Date(a.Timestamp));
-};
-
-export const addPhoto = async (photoData) => {
-    await loadPhotos();
-    const newPhoto = {
-        PhotoID: `ph_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
-        Timestamp: new Date().toISOString(),
-        ...photoData
-    };
-    mockPhotos.push(newPhoto);
-    await savePhotos();
-    return newPhoto;
-};
-
-export const updatePhotoNotes = async (photoId, newNotes) => {
-    await loadPhotos();
-    const photo = mockPhotos.find(p => p.PhotoID === photoId);
-    if (photo) {
-        photo.Notes = newNotes;
-        await savePhotos();
+    if (memoryCache.projects[id]) return memoryCache.projects[id];
+    const docRef = doc(firestore, 'projects', id);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+        memoryCache.projects[id] = docSnap.data();
+        return memoryCache.projects[id];
     }
-    return photo;
-};
-
-export const updatePhoto = async (photoId, newImageFile, newNotes, isMarkedUp = undefined, originalImageFile = undefined) => {
-    await loadPhotos();
-    const photoIndex = mockPhotos.findIndex(p => p.PhotoID === photoId);
-    if (photoIndex !== -1) {
-        mockPhotos[photoIndex] = {
-            ...mockPhotos[photoIndex],
-            ImageFile: newImageFile,
-            Notes: newNotes,
-            Timestamp: new Date().toISOString() // Update timestamp to show it was recently modified
-        };
-        if (isMarkedUp !== undefined) {
-            mockPhotos[photoIndex].IsMarkedUp = isMarkedUp;
-        }
-        if (originalImageFile !== undefined) {
-            mockPhotos[photoIndex].OriginalImageFile = originalImageFile;
-        }
-        await savePhotos();
-        return mockPhotos[photoIndex];
-    }
-    throw new Error('Photo not found');
-};
-
-export const deletePhoto = async (photoId) => {
-    await loadPhotos();
-    const photoIndex = mockPhotos.findIndex(p => p.PhotoID === photoId);
-    if (photoIndex !== -1) {
-        mockPhotos.splice(photoIndex, 1);
-        await savePhotos();
-        return true;
-    }
-    return false;
+    return undefined;
 };
 
 export const addProject = async (projectData) => {
+    const ProjectID = `p${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
     const newProject = {
-        ProjectID: `p${Date.now()}`,
+        ProjectID,
+        userId: getUid(),
         CreatedAt: new Date().toISOString(),
         IsFavorite: false,
         Lat: projectData.Lat || null,
         Lon: projectData.Lon || null,
         ...projectData
     };
-    mockProjects.push(newProject);
-    saveToLocalStorage();
+    await setDoc(doc(firestore, 'projects', ProjectID), newProject);
+    clearDBCache();
     return newProject;
 };
 
+export const updateProject = async (projectId, newProjectData) => {
+    const docRef = doc(firestore, 'projects', projectId);
+    await setDoc(docRef, newProjectData, { merge: true });
+    clearDBCache();
+    const snap = await getDoc(docRef);
+    return snap.data();
+};
+
 export const deleteProject = async (projectId) => {
-    const index = mockProjects.findIndex(p => p.ProjectID === projectId);
-    if (index !== -1) {
-        // Soft delete: set ArchivedAt timestamp
-        mockProjects[index] = {
-            ...mockProjects[index],
-            ArchivedAt: new Date().toISOString()
-        };
-        saveToLocalStorage();
-        return true;
-    }
-    return false;
+    const docRef = doc(firestore, 'projects', projectId);
+    await setDoc(docRef, { ArchivedAt: new Date().toISOString() }, { merge: true });
+    clearDBCache();
+    return true;
 };
 
 export const restoreProject = async (projectId) => {
-    const index = mockProjects.findIndex(p => p.ProjectID === projectId);
-    if (index !== -1) {
-        mockProjects[index] = {
-            ...mockProjects[index]
-        };
-        delete mockProjects[index].ArchivedAt;
-        saveToLocalStorage();
-        return true;
-    }
-    return false;
+    const docRef = doc(firestore, 'projects', projectId);
+    await updateDoc(docRef, { ArchivedAt: deleteField() });
+    clearDBCache();
+    return true;
 };
 
 export const permanentlyDeleteProject = async (projectId) => {
-    const index = mockProjects.findIndex(p => p.ProjectID === projectId);
-    if (index !== -1) {
-        mockProjects.splice(index, 1);
-
-        // Delete all photos for this project to avoid orphans
-        const remainingPhotos = mockPhotos.filter(p => p.ProjectID !== projectId);
-        mockPhotos.length = 0;
-        mockPhotos.push(...remainingPhotos);
-        await savePhotos();
-
-        // Delete all todos for this project
-        mockTodos = mockTodos.filter(t => t.ProjectID !== projectId);
-
-        saveToLocalStorage();
-        return true;
+    // 1. Delete all photos (directly by Document ID to destroy Ghosts)
+    const q = query(collection(firestore, 'photos'), where("userId", "==", getUid()), where("ProjectID", "==", projectId));
+    const snap = await getDocs(q);
+    for (const d of snap.docs) {
+        await deleteDoc(doc(firestore, 'photos', d.id));
     }
-    return false;
+
+    // 2. Delete all punchlist todos
+    const tq = query(collection(firestore, 'todos'), where("userId", "==", getUid()), where("ProjectID", "==", projectId));
+    const ts = await getDocs(tq);
+    for (const d of ts.docs) {
+        await deleteDoc(doc(firestore, 'todos', d.id));
+    }
+
+    // 3. Delete all custom folders
+    const fq = query(collection(firestore, 'folders'), where("userId", "==", getUid()), where("ProjectID", "==", projectId));
+    const fs = await getDocs(fq);
+    for (const d of fs.docs) {
+        await deleteDoc(doc(firestore, 'folders', d.id));
+    }
+
+    // 4. Delete the physical project
+    await deleteDoc(doc(firestore, 'projects', projectId));
+    clearDBCache();
+    return true;
 };
 
-export const updateProject = async (projectId, newProjectData) => {
-    const index = mockProjects.findIndex(p => p.ProjectID === projectId);
-    if (index !== -1) {
-        mockProjects[index] = {
-            ...mockProjects[index],
-            ...newProjectData,
-            // Keep original values if not provided
-            ProjectName: newProjectData.ProjectName || mockProjects[index].ProjectName,
-            Location: newProjectData.Location !== undefined ? newProjectData.Location : mockProjects[index].Location,
-            IsFavorite: newProjectData.IsFavorite !== undefined ? newProjectData.IsFavorite : mockProjects[index].IsFavorite,
-            Lat: newProjectData.Lat !== undefined ? newProjectData.Lat : mockProjects[index].Lat,
-            Lon: newProjectData.Lon !== undefined ? newProjectData.Lon : mockProjects[index].Lon
-        };
-        saveToLocalStorage();
-        return mockProjects[index];
-    }
-    throw new Error('Project not found');
+// --- Photos ---
+export const getPhotosForProject = async (projectId) => {
+    if (memoryCache.projectPhotos[projectId]) return memoryCache.projectPhotos[projectId];
+    const q = query(collection(firestore, 'photos'), where("userId", "==", getUid()), where("ProjectID", "==", projectId));
+    const snapshot = await getDocs(q);
+    const photos = snapshot.docs.map(doc => doc.data());
+    memoryCache.projectPhotos[projectId] = photos.sort((a, b) => {
+        const timeA = a.Timestamp ? new Date(a.Timestamp).getTime() : 0;
+        const timeB = b.Timestamp ? new Date(b.Timestamp).getTime() : 0;
+        return timeB - timeA;
+    });
+    return memoryCache.projectPhotos[projectId];
 };
 
-// --- Todo Functions ---
+export const getAllPhotos = async () => {
+    if (memoryCache.allPhotos) return memoryCache.allPhotos;
+    const q = query(collection(firestore, 'photos'), where("userId", "==", getUid()));
+    const snapshot = await getDocs(q);
+    const photos = snapshot.docs.map(doc => doc.data());
+    memoryCache.allPhotos = photos.sort((a, b) => {
+        const timeA = a.Timestamp ? new Date(a.Timestamp).getTime() : 0;
+        const timeB = b.Timestamp ? new Date(b.Timestamp).getTime() : 0;
+        return timeB - timeA;
+    });
+    return memoryCache.allPhotos;
+};
 
+export const addPhoto = async (photoData) => {
+    const PhotoID = photoData.PhotoID || `ph_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+    let imageUrl = photoData.ImageFile;
+    let originalUrl = photoData.OriginalImageFile;
+    const uploadTasks = [];
+
+    // Queue base64 to Firebase Storage
+    if (photoData.ImageFile && photoData.ImageFile.startsWith('data:image')) {
+        const primaryRef = ref(storage, `users/${getUid()}/photos/${PhotoID}.jpg`);
+        uploadTasks.push(
+            uploadString(primaryRef, photoData.ImageFile, 'data_url')
+                .then(() => getDownloadURL(primaryRef))
+                .then(url => { imageUrl = url; })
+        );
+    }
+
+    if (photoData.OriginalImageFile && photoData.OriginalImageFile.startsWith('data:image')) {
+        const origRef = ref(storage, `users/${getUid()}/photos/${PhotoID}_orig.jpg`);
+        uploadTasks.push(
+            uploadString(origRef, photoData.OriginalImageFile, 'data_url')
+                .then(() => getDownloadURL(origRef))
+                .then(url => { originalUrl = url; })
+        );
+    }
+
+    // Execute concurrently to half upload times
+    await Promise.all(uploadTasks);
+
+    const newPhoto = {
+        PhotoID,
+        userId: getUid(),
+        Timestamp: new Date().toISOString(),
+        Tags: [],
+        ...photoData,
+        ImageFile: imageUrl
+    };
+
+    if (originalUrl) {
+        newPhoto.OriginalImageFile = originalUrl;
+    } else {
+        delete newPhoto.OriginalImageFile;
+    }
+
+    await setDoc(doc(firestore, 'photos', PhotoID), newPhoto);
+
+    if (photoData.ProjectID && memoryCache.projectPhotos[photoData.ProjectID]) {
+        memoryCache.projectPhotos[photoData.ProjectID].unshift(newPhoto);
+    }
+    if (memoryCache.allPhotos) {
+        memoryCache.allPhotos.unshift(newPhoto);
+    }
+
+    return newPhoto;
+};
+
+export const updatePhotoDetails = async (photoId, newNotes, newTags) => {
+    const docRef = doc(firestore, 'photos', photoId);
+    const updates = {};
+    if (newNotes !== undefined) updates.Notes = newNotes;
+    if (newTags !== undefined) updates.Tags = newTags;
+    await setDoc(docRef, updates, { merge: true });
+
+    Object.values(memoryCache.projectPhotos).forEach(photos => {
+        const p = photos.find(x => x.PhotoID === photoId);
+        if (p) {
+            if (newNotes !== undefined) p.Notes = newNotes;
+            if (newTags !== undefined) p.Tags = newTags;
+        }
+    });
+
+    if (memoryCache.allPhotos) {
+        const ap = memoryCache.allPhotos.find(x => x.PhotoID === photoId);
+        if (ap) {
+            if (newNotes !== undefined) ap.Notes = newNotes;
+            if (newTags !== undefined) ap.Tags = newTags;
+        }
+    }
+
+    const snap = await getDoc(docRef);
+    return snap.data();
+};
+
+export const updatePhoto = async (photoId, newImageFile, newNotes, isMarkedUp = undefined, originalImageFile = undefined, newTags = undefined) => {
+    let imageUrl = newImageFile;
+    let origUrl = originalImageFile;
+    const uploadTasks = [];
+
+    if (newImageFile && newImageFile.startsWith('data:image')) {
+        const storageRef = ref(storage, `users/${getUid()}/photos/${photoId}_markup_${Date.now()}.jpg`);
+        uploadTasks.push(
+            uploadString(storageRef, newImageFile, 'data_url')
+                .then(() => getDownloadURL(storageRef))
+                .then(url => { imageUrl = url; })
+        );
+    }
+
+    if (originalImageFile && originalImageFile.startsWith('data:image')) {
+        const oRef = ref(storage, `users/${getUid()}/photos/${photoId}_orig.jpg`);
+        uploadTasks.push(
+            uploadString(oRef, originalImageFile, 'data_url')
+                .then(() => getDownloadURL(oRef))
+                .then(url => { origUrl = url; })
+        );
+    }
+
+    await Promise.all(uploadTasks);
+
+    const docRef = doc(firestore, 'photos', photoId);
+    const updates = {
+        ImageFile: imageUrl,
+        Timestamp: new Date().toISOString()
+    };
+    if (newNotes !== undefined) updates.Notes = newNotes;
+    if (isMarkedUp !== undefined) updates.IsMarkedUp = isMarkedUp;
+    if (origUrl !== undefined) updates.OriginalImageFile = origUrl;
+    if (newTags !== undefined) updates.Tags = newTags;
+
+    await setDoc(docRef, updates, { merge: true });
+
+    Object.values(memoryCache.projectPhotos).forEach(photos => {
+        const p = photos.find(x => x.PhotoID === photoId);
+        if (p) {
+            p.ImageFile = imageUrl;
+            p.Timestamp = updates.Timestamp;
+            if (newNotes !== undefined) p.Notes = newNotes;
+            if (isMarkedUp !== undefined) p.IsMarkedUp = isMarkedUp;
+            if (origUrl !== undefined) p.OriginalImageFile = origUrl;
+            if (newTags !== undefined) p.Tags = newTags;
+        }
+    });
+
+    if (memoryCache.allPhotos) {
+        const ap = memoryCache.allPhotos.find(x => x.PhotoID === photoId);
+        if (ap) {
+            ap.ImageFile = imageUrl;
+            ap.Timestamp = updates.Timestamp;
+            if (newNotes !== undefined) ap.Notes = newNotes;
+            if (isMarkedUp !== undefined) ap.IsMarkedUp = isMarkedUp;
+            if (origUrl !== undefined) ap.OriginalImageFile = origUrl;
+            if (newTags !== undefined) ap.Tags = newTags;
+        }
+    }
+
+    const snap = await getDoc(docRef);
+    return snap.data();
+};
+
+export const deletePhoto = async (photoId) => {
+    try {
+        await deleteDoc(doc(firestore, 'photos', photoId));
+
+        Object.keys(memoryCache.projectPhotos).forEach(pid => {
+            memoryCache.projectPhotos[pid] = memoryCache.projectPhotos[pid].filter(p => p.PhotoID !== photoId);
+        });
+        if (memoryCache.allPhotos) {
+            memoryCache.allPhotos = memoryCache.allPhotos.filter(p => p.PhotoID !== photoId);
+        }
+    } catch (e) { console.error("Error deleting photo doc", e); }
+    return true;
+};
+
+// --- Project Folders (Rooms) ---
+export const getProjectFolders = async (projectId) => {
+    const q = query(collection(firestore, 'folders'), where("userId", "==", getUid()), where("ProjectID", "==", projectId));
+    const snapshot = await getDocs(q);
+    const folders = snapshot.docs.map(doc => doc.data());
+    return folders.sort((a, b) => {
+        const timeA = a.CreatedAt ? new Date(a.CreatedAt).getTime() : 0;
+        const timeB = b.CreatedAt ? new Date(b.CreatedAt).getTime() : 0;
+        return timeA - timeB;
+    });
+};
+
+export const getAllFolders = async () => {
+    if (memoryCache.allFolders) return memoryCache.allFolders;
+    const q = query(collection(firestore, 'folders'), where("userId", "==", getUid()));
+    const snapshot = await getDocs(q);
+    const folders = snapshot.docs.map(doc => doc.data());
+    memoryCache.allFolders = folders;
+    return memoryCache.allFolders;
+};
+
+export const addProjectFolder = async (projectId, name) => {
+    const FolderID = `fld_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+    const newFolder = {
+        FolderID,
+        ProjectID: projectId,
+        userId: getUid(),
+        Name: name,
+        CreatedAt: new Date().toISOString()
+    };
+    await setDoc(doc(firestore, 'folders', FolderID), newFolder);
+    return newFolder;
+};
+
+export const deleteProjectFolder = async (folderId) => {
+    // Phase 1: Orphan all photos that were sitting inside this folder back into the main uncategorized gallery
+    const q = query(collection(firestore, 'photos'), where("userId", "==", getUid()), where("FolderID", "==", folderId));
+    const snap = await getDocs(q);
+    for (const d of snap.docs) {
+        await updateDoc(doc(firestore, 'photos', d.ref.id), { FolderID: deleteField() });
+    }
+
+    // Phase 2: Safely destroy the folder metadata object itself
+    await deleteDoc(doc(firestore, 'folders', folderId));
+    clearDBCache();
+    return true;
+};
+
+export const movePhotosToFolder = async (photoIds, folderId) => {
+    // If folderId is null, it removes them from any folders (back to general root gallery)
+    for (const pid of photoIds) {
+        const docRef = doc(firestore, 'photos', pid);
+        if (folderId) {
+            await updateDoc(docRef, { FolderID: folderId });
+        } else {
+            await updateDoc(docRef, { FolderID: deleteField() });
+        }
+    }
+    clearDBCache();
+    return true;
+};
+
+// --- Todos ---
 export const getTodosForProject = async (projectId) => {
-    return mockTodos.filter(t => t.ProjectID === projectId).sort((a, b) => new Date(a.Timestamp) - new Date(b.Timestamp));
+    const q = query(collection(firestore, 'todos'), where("userId", "==", getUid()), where("ProjectID", "==", projectId));
+    const snapshot = await getDocs(q);
+    const todos = snapshot.docs.map(doc => doc.data());
+    return todos.sort((a, b) => new Date(a.Timestamp) - new Date(b.Timestamp));
 };
 
 export const addTodo = async (todoData) => {
+    const TodoID = `td_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
     const newTodo = {
-        TodoID: `td_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+        TodoID,
+        userId: getUid(),
         Timestamp: new Date().toISOString(),
         IsCompleted: false,
         ...todoData
     };
-    mockTodos.push(newTodo);
-    saveToLocalStorage();
+    await setDoc(doc(firestore, 'todos', TodoID), newTodo);
     return newTodo;
 };
 
 export const toggleTodo = async (todoId) => {
-    const todoIndex = mockTodos.findIndex(t => t.TodoID === todoId);
-    if (todoIndex !== -1) {
-        mockTodos[todoIndex].IsCompleted = !mockTodos[todoIndex].IsCompleted;
-        saveToLocalStorage();
-        return mockTodos[todoIndex];
+    const docRef = doc(firestore, 'todos', todoId);
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+        const t = snap.data();
+        await updateDoc(docRef, { IsCompleted: !t.IsCompleted });
+        return { ...t, IsCompleted: !t.IsCompleted };
     }
     throw new Error("Todo not found");
 };
 
 export const deleteTodo = async (todoId) => {
-    const index = mockTodos.findIndex(t => t.TodoID === todoId);
-    if (index !== -1) {
-        mockTodos.splice(index, 1);
-        saveToLocalStorage();
-        return true;
+    await deleteDoc(doc(firestore, 'todos', todoId));
+    return true;
+};
+
+// --- Nuclear Account Deletion ---
+export const scrubOrphanedPhotosByDocId = async () => {
+    const photosSnap = await getDocs(query(collection(firestore, 'photos'), where("userId", "==", getUid())));
+    const projectsSnap = await getDocs(query(collection(firestore, 'projects'), where("userId", "==", getUid())));
+
+    const validProjectIds = new Set();
+    projectsSnap.docs.forEach(doc => {
+        validProjectIds.add(doc.id);
+        if (doc.data().ProjectID) validProjectIds.add(doc.data().ProjectID);
+    });
+
+    let swept = false;
+    for (const pDoc of photosSnap.docs) {
+        if (!validProjectIds.has(pDoc.data().ProjectID)) {
+            console.log("Physically destroying orphaned photograph document:", pDoc.id);
+            await deleteDoc(doc(firestore, 'photos', pDoc.id));
+            swept = true;
+        }
     }
-    return false;
+
+    if (swept) {
+        clearDBCache();
+    }
+    return swept;
+};
+
+export const completelyDeleteUserAccount = async () => {
+    const uid = getUid();
+
+    // 1. Delete all photos (Firestore & Storage)
+    const pq = query(collection(firestore, 'photos'), where("userId", "==", uid));
+    const psnap = await getDocs(pq);
+    for (const d of psnap.docs) {
+        const pData = d.data();
+        if (pData.ImageFile && pData.ImageFile.includes('firebasestorage.googleapis.com')) {
+            try {
+                const photoRef = ref(storage, pData.ImageFile);
+                await deleteObject(photoRef);
+            } catch (e) { console.warn("Could not delete photo from storage", e); }
+        }
+        await deleteDoc(doc(firestore, 'photos', d.ref.id));
+    }
+
+    // 2. Delete all todos
+    const tq = query(collection(firestore, 'todos'), where("userId", "==", uid));
+    const ts = await getDocs(tq);
+    for (const d of ts.docs) {
+        await deleteDoc(doc(firestore, 'todos', d.ref.id));
+    }
+
+    // 3. Delete all projects
+    const prq = query(collection(firestore, 'projects'), where("userId", "==", uid));
+    const prs = await getDocs(prq);
+    for (const d of prs.docs) {
+        await deleteDoc(doc(firestore, 'projects', d.ref.id));
+    }
+
+    // 4. Delete profile
+    await deleteDoc(doc(firestore, 'users', uid));
+    clearDBCache();
+
+    return true;
 };

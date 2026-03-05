@@ -4,13 +4,16 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite build --watch & vite",
+    "dev": "vite --host",
     "build": "vite build",
     "preview": "vite preview",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist"
   },
   "dependencies": {
+    "@capacitor/camera": "^8.0.1",
+    "@capacitor/core": "^8.1.0",
+    "firebase": "^12.10.0",
     "idb-keyval": "^6.2.2",
     "lucide-react": "^0.575.0",
     "lz-string": "^1.5.0",
@@ -19,6 +22,9 @@
     "swiper": "^12.1.2"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^7.5.0",
+    "@capacitor/ios": "^8.1.0",
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",
     "@vitejs/plugin-basic-ssl": "^1.1.0",

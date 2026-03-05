@@ -28,8 +28,8 @@ const PlaceholderView = ({ title, type, navigateTo }) => {
     };
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', backgroundColor: 'var(--background)' }}>
-            <header className="header" style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '64px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: 'var(--background)' }}>
+            <header className="header" style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '64px', borderBottom: '1px solid var(--border)' }}>
                 <button
                     onClick={() => navigateTo('HOME')}
                     style={{ position: 'absolute', left: '1.5rem', background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}

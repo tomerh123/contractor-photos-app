@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { auth } from './firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 import * as db from './db';
 
 const AppContext = createContext();
@@ -10,27 +12,43 @@ export const AppProvider = ({ children }) => {
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    const fetchProjects = async () => {
-        setLoading(true);
-        const data = await db.getProjects();
+    const fetchProjects = async (uid) => {
+        const data = await db.getProjects(uid);
         setProjects(data);
-        setLoading(false);
     };
 
-    const fetchProfile = async () => {
-        const profile = await db.getProfile();
-        setCurrentUser(profile);
+    const refreshProfile = async (uid) => {
+        const profile = await db.getProfile(uid);
+        if (profile) {
+            setCurrentUser({ ...profile, uid });
+            await fetchProjects(uid);
+        } else {
+            setCurrentUser(null);
+        }
     };
 
     useEffect(() => {
+        // We still call initializeDB to set up basic mock structure if needed for legacy migration
         db.initializeDB();
-        fetchProjects();
-        fetchProfile();
+
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+            setLoading(true);
+            if (user) {
+                await refreshProfile(user.uid);
+            } else {
+                setCurrentUser(null);
+                setProjects([]);
+            }
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
     }, []);
 
     const updateCurrentUser = async (updates) => {
-        const newProfile = await db.updateProfile(updates);
-        setCurrentUser(newProfile);
+        if (!currentUser?.uid) return;
+        await db.updateProfile(currentUser.uid, updates);
+        setCurrentUser(prev => ({ ...prev, ...updates }));
     };
 
     const value = {
@@ -38,7 +56,8 @@ export const AppProvider = ({ children }) => {
         projects,
         loading,
         refreshProjects: fetchProjects,
-        updateCurrentUser
+        updateCurrentUser,
+        refreshProfile
     };
 
     return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

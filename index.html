@@ -8,11 +8,25 @@
   <meta name="theme-color" content="#0c8ce9" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Photos MVP" />
-  <link rel="apple-touch-icon"
-    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%230c8ce9%22/><text x=%2250%22 y=%2254%22 font-size=%2250%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22>📷</text></svg>">
+  <meta name="apple-mobile-web-app-title" content="TrueSite" />
+  <link rel="icon" href="/icon.png" />
+  <link rel="apple-touch-icon" href="/icon.png" />
   <link rel="manifest" href="/manifest.json" />
-  <title>ContractorPhotos MVP</title>
+  <title>TrueSite</title>
+  <script>
+    window.onerror = function (message, source, lineno, colno, error) {
+      const errDiv = document.createElement('div');
+      errDiv.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,0,0,0.9);color:white;z-index:999999;padding:20px;font-family:monospace;white-space:pre-wrap;overflow-y:auto;text-align:left;';
+      errDiv.innerHTML = '<h2>Native App Crash!</h2><br/><b>Message:</b> ' + message + '<br/><br/><b>File:</b> ' + source + ':' + lineno + '<br/><br/><b>Stack:</b> ' + (error ? error.stack : 'N/A');
+      document.body.appendChild(errDiv);
+    };
+    window.addEventListener('unhandledrejection', function (event) {
+      const errDiv = document.createElement('div');
+      errDiv.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,0,0,0.9);color:white;z-index:999999;padding:20px;font-family:monospace;white-space:pre-wrap;overflow-y:auto;text-align:left;';
+      errDiv.innerHTML = '<h2>Unhandled Promise Rejection!</h2><br/><b>Reason:</b> ' + (event.reason ? (event.reason.message || event.reason) : 'Unknown') + '<br/><br/><b>Stack:</b> ' + (event.reason ? event.reason.stack : 'N/A');
+      document.body.appendChild(errDiv);
+    });
+  </script>
 </head>
 
 <body>

@@ -4,12 +4,14 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Zoom } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/zoom';
+import TagSelector from './TagSelector';
 
-const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes, onDelete }) => {
-    const [currentIndex, setCurrentIndex] = useState(initialIndex);
+const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes, onDelete, disableAnimation = false, getFolderName }) => {
+    const [currentIndex, setCurrentIndex] = useState(initialIndex || 0);
     const [showUI, setShowUI] = useState(true);
     const [isEditingNotes, setIsEditingNotes] = useState(false);
     const [notesText, setNotesText] = useState('');
+    const [selectedTags, setSelectedTags] = useState([]);
     const [isSaving, setIsSaving] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -22,6 +24,7 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
     // Sync notes text when changing photos
     useEffect(() => {
         setNotesText(currentPhoto?.Notes || '');
+        setSelectedTags(currentPhoto?.Tags || []);
         setIsEditingNotes(false);
     }, [currentIndex, currentPhoto]);
 
@@ -45,10 +48,12 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
 
     const saveNotes = async () => {
         setIsSaving(true);
-        await onUpdateNotes(currentPhoto.PhotoID, notesText);
+        await onUpdateNotes(currentPhoto.PhotoID, notesText, selectedTags);
         setIsSaving(false);
         setIsEditingNotes(false);
     };
+
+
 
     const handleDelete = () => {
         setShowDeleteModal(true);
@@ -76,14 +81,14 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
                 zIndex: 2000,
                 display: 'flex',
                 flexDirection: 'column',
-                animation: 'slideUp 0.2s ease-out',
+                animation: disableAnimation ? 'none' : 'slideUp 0.15s ease-out',
                 transition: 'background-color 0.3s ease',
                 touchAction: 'none'
             }}
         >
             {/* Header Controls */}
             <header style={{
-                padding: '1rem',
+                padding: 'calc(env(safe-area-inset-top) + 2.8rem) 1rem 1rem 1rem',
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
@@ -181,6 +186,7 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
                 left: 0,
                 right: 0,
                 zIndex: 50,
+                paddingBottom: 'env(safe-area-inset-bottom)',
                 transform: showUI ? 'translateY(0)' : 'translateY(100%)',
                 transition: 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.1)',
                 display: 'flex',
@@ -188,6 +194,9 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
             }}>
                 {isEditingNotes ? (
                     <div style={{ padding: '1rem' }}>
+                        <div style={{ marginBottom: '1rem' }}>
+                            <TagSelector selectedTags={selectedTags} onTagsChange={setSelectedTags} />
+                        </div>
                         <textarea
                             value={notesText}
                             onChange={e => setNotesText(e.target.value)}
@@ -202,22 +211,41 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
                                 borderRadius: '8px',
                                 padding: '0.8rem',
                                 marginBottom: '1rem',
-                                fontFamily: 'inherit'
+                                fontFamily: 'inherit',
+                                fontSize: '1rem' // Prevents iOS auto-zoom and improves readability
                             }}
                         />
                         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
                             <button className="btn" onClick={() => setIsEditingNotes(false)} disabled={isSaving}>Cancel</button>
                             <button className="btn btn-primary" onClick={saveNotes} disabled={isSaving}>
-                                {isSaving ? 'Saving...' : 'Save Note'}
+                                {isSaving ? 'Saving...' : 'Save Details'}
                             </button>
                         </div>
                     </div>
                 ) : (
                     <>
-                        {currentPhoto.Notes && (
-                            <div style={{ padding: '1rem 1rem 0 1rem', fontSize: '0.95rem', maxHeight: '100px', overflowY: 'auto' }}>
-                                <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '4px' }}>Notes</p>
-                                <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{currentPhoto.Notes}</p>
+                        {(((currentPhoto.Tags && currentPhoto.Tags.length > 0) || (currentPhoto.FolderID && getFolderName && getFolderName(currentPhoto.FolderID))) || currentPhoto.Notes) && (
+                            <div style={{ padding: '1rem 1rem 0 1rem', fontSize: '0.95rem', maxHeight: '150px', overflowY: 'auto' }}>
+                                {((currentPhoto.Tags && currentPhoto.Tags.length > 0) || (currentPhoto.FolderID && getFolderName && getFolderName(currentPhoto.FolderID))) && (
+                                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: currentPhoto.Notes ? '0.8rem' : 0 }}>
+                                        {currentPhoto.FolderID && getFolderName && getFolderName(currentPhoto.FolderID) && (
+                                            <span style={{ backgroundColor: '#0ea5e9', color: 'white', padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 }}>
+                                                {getFolderName(currentPhoto.FolderID)}
+                                            </span>
+                                        )}
+                                        {currentPhoto.Tags && currentPhoto.Tags.map(tag => (
+                                            <span key={tag} style={{ backgroundColor: 'var(--primary-light)', color: 'var(--primary-color)', padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 }}>
+                                                #{tag}
+                                            </span>
+                                        ))}
+                                    </div>
+                                )}
+                                {currentPhoto.Notes && (
+                                    <>
+                                        <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '4px' }}>Notes</p>
+                                        <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{currentPhoto.Notes}</p>
+                                    </>
+                                )}
                             </div>
                         )}
 
@@ -236,7 +264,7 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
                                 style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}
                             >
                                 <MessageSquare size={24} />
-                                <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>{currentPhoto.Notes ? 'Edit Note' : 'Add Note'}</span>
+                                <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>{(currentPhoto.Notes || (currentPhoto.Tags && currentPhoto.Tags.length)) ? 'Edit Details' : 'Add Details'}</span>
                             </button>
 
                             <button

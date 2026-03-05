@@ -1,14 +1,12 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import basicSsl from '@vitejs/plugin-basic-ssl'
 import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  base: '/contractor-photos-app/',
+  base: './',
   plugins: [
     react(),
-    basicSsl(),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg', 'assets/*'],
@@ -16,10 +14,12 @@ export default defineConfig({
       // Wait, let's just use `injectRegister: 'auto'` (default)
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,json}'],
-        maximumFileSizeToCacheInBytes: 5000000 // 5MB
+        maximumFileSizeToCacheInBytes: 5000000, // 5MB
+        skipWaiting: true,
+        clientsClaim: true,
       },
       devOptions: {
-        enabled: true, // Enable service worker in development mode so they can test it on their phone
+        enabled: true,
         type: 'module',
       }
     })
