@@ -81,23 +81,13 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
                     });
                     savedFileUri = savedFile.uri;
                 } else {
-                    const response = await fetch(currentPhoto.ImageFile);
-                    const blob = await response.blob();
-
-                    const base64Data = await new Promise((resolve, reject) => {
-                        const reader = new FileReader();
-                        reader.onloadend = () => resolve(reader.result.split(',')[1]);
-                        reader.onerror = reject;
-                        reader.readAsDataURL(blob);
-                    });
-
                     const fileName = `photo_${Date.now()}.jpg`;
-                    const savedFile = await Filesystem.writeFile({
+                    const downloadResult = await Filesystem.downloadFile({
+                        url: currentPhoto.ImageFile,
                         path: fileName,
-                        data: base64Data,
                         directory: Directory.Cache
                     });
-                    savedFileUri = savedFile.uri;
+                    savedFileUri = downloadResult.path;
                 }
 
                 await Media.requestPermissions();
