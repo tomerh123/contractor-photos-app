@@ -106,18 +106,31 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
                 alert("Photo saved to your camera roll!");
             } else {
                 // Web fallback
-                const response = await fetch(currentPhoto.ImageFile);
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.style.display = 'none';
-                a.href = url;
-                a.download = `photo_${Date.now()}.jpg`;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-                alert("Photo downloaded!");
+                try {
+                    const response = await fetch(currentPhoto.ImageFile);
+                    if (!response.ok) throw new Error("Fetch failed");
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = `photo_${Date.now()}.jpg`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    alert("Photo downloaded!");
+                } catch (webErr) {
+                    // Fallback if CORS blocks the fetch (common on Firebase Storage Web client)
+                    console.log("CORS blocked fetch, falling back to direct link", webErr);
+                    const a = document.createElement('a');
+                    a.href = currentPhoto.ImageFile;
+                    a.target = '_blank';
+                    a.download = `photo_${Date.now()}.jpg`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                }
             }
         } catch (err) {
             console.error("Error saving photo:", err);
