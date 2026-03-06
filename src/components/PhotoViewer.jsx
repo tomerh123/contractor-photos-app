@@ -198,8 +198,19 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
                 >
                     Close
                 </button>
-                <div style={{ color: 'white', fontWeight: 'bold', backdropFilter: 'blur(5px)', padding: '0.2rem 0.5rem', borderRadius: '5px' }}>
-                    {currentIndex + 1} / {photos.length}
+                <div style={{ textAlign: 'center', backdropFilter: 'blur(5px)', padding: '0.2rem 0.5rem', borderRadius: '5px' }}>
+                    {currentPhoto.Timestamp ? (
+                        <>
+                            <div style={{ color: 'white', fontWeight: '600', fontSize: '0.95rem', lineHeight: 1.2 }}>
+                                {new Date(currentPhoto.Timestamp).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                            </div>
+                            <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.8rem', marginTop: '2px' }}>
+                                {new Date(currentPhoto.Timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                            </div>
+                        </>
+                    ) : (
+                        <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem' }}>No date</div>
+                    )}
                 </div>
             </header>
 
