@@ -11,16 +11,18 @@ const AllProjectsView = ({ navigateTo }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [sortOrder, setSortOrder] = useState('newest');
 
-    const [activeTab, setActiveTab] = useState('Active'); // 'Active' or 'Archived'
+    const [activeTab, setActiveTab] = useState('Active'); // 'Active', 'Favorites', or 'Archived'
 
     useEffect(() => {
         const sortProjects = async () => {
-            setIsLoading(true);
+            if (sortedProjects.length === 0) setIsLoading(true);
 
             // Filter by active/archived tab
             let tabProjects = projects;
             if (activeTab === 'Active') {
                 tabProjects = projects.filter(p => !p.ArchivedAt);
+            } else if (activeTab === 'Favorites') {
+                tabProjects = projects.filter(p => p.IsFavorite && !p.ArchivedAt);
             } else {
                 tabProjects = projects.filter(p => p.ArchivedAt);
             }
@@ -127,6 +129,7 @@ const AllProjectsView = ({ navigateTo }) => {
                 {/* Tabs */}
                 <div style={{ display: 'flex', gap: '1.5rem', borderBottom: '1px solid var(--border)', marginTop: '1.5rem' }}>
                     <div onClick={() => setActiveTab('Active')} style={{ cursor: 'pointer', paddingBottom: '0.6rem', borderBottom: activeTab === 'Active' ? '2px solid var(--primary-color)' : '2px solid transparent', fontWeight: 600, color: activeTab === 'Active' ? 'var(--text-primary)' : 'var(--text-secondary)' }}>Active</div>
+                    <div onClick={() => setActiveTab('Favorites')} style={{ cursor: 'pointer', paddingBottom: '0.6rem', borderBottom: activeTab === 'Favorites' ? '2px solid var(--primary-color)' : '2px solid transparent', color: activeTab === 'Favorites' ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: 600 }}>Favorites</div>
                     <div onClick={() => setActiveTab('Archived')} style={{ cursor: 'pointer', paddingBottom: '0.6rem', borderBottom: activeTab === 'Archived' ? '2px solid var(--primary-color)' : '2px solid transparent', color: activeTab === 'Archived' ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: 600 }}>Archived</div>
                 </div>
             </div>

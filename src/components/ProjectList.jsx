@@ -210,7 +210,7 @@ const ProjectList = ({ navigateTo }) => {
                         paddingRight: '1.5rem'
                     }}>
                         {displayedProjects.slice(0, 5).map(project => (
-                            <div key={project.ProjectID} style={{ width: 'calc(50vw - 1.5rem)', minWidth: '160px', flex: 'none', scrollSnapAlign: 'start' }}>
+                            <div key={project.ProjectID} style={{ width: 'calc(50vw - 2rem)', minWidth: '160px', flex: 'none', scrollSnapAlign: 'start' }}>
                                 <ProjectCard project={project} navigateTo={navigateTo} hideLocation={true} />
                             </div>
                         ))}
