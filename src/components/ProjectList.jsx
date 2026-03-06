@@ -219,7 +219,7 @@ const ProjectList = ({ navigateTo }) => {
 
                 {/* Quick Links Grid */}
                 <h2 style={{ fontSize: '1.3rem', marginTop: '0.5rem', marginBottom: '0.5rem' }}>Navigation</h2>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem', paddingBottom: '150px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem', paddingBottom: '2rem' }}>
                     <div onClick={() => { setIsCreatingFromCamera(false); setShowModal(true); }}>
                         <QuickLink icon={<Plus size={22} />} title="New Project" />
                     </div>
