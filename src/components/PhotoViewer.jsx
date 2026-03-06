@@ -83,23 +83,34 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
                     });
                     savedFileUri = savedFile.uri;
                 } else {
-                    alert("2b. Downloading photo from cloud...");
                     const fileName = `photo_${Date.now()}.jpg`;
-                    const downloadResult = await Filesystem.downloadFile({
-                        url: currentPhoto.ImageFile,
-                        path: fileName,
-                        directory: Directory.Cache
-                    });
-                    savedFileUri = downloadResult.path;
-                    if (!savedFileUri.startsWith('file://')) {
-                        savedFileUri = 'file://' + savedFileUri;
+                    try {
+                        const response = await fetch(currentPhoto.ImageFile);
+                        if (!response.ok) throw new Error("Fetch failed");
+                        const blob = await response.blob();
+                        const base64Data = await new Promise((resolve, reject) => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => resolve(reader.result.split(',')[1]);
+                            reader.onerror = reject;
+                            reader.readAsDataURL(blob);
+                        });
+
+                        const savedFile = await Filesystem.writeFile({
+                            path: fileName,
+                            data: base64Data,
+                            directory: Directory.Cache
+                        });
+                        savedFileUri = savedFile.uri;
+                        if (!savedFileUri.startsWith('file://')) {
+                            savedFileUri = 'file://' + savedFileUri;
+                        }
+                    } catch (e) {
+                        alert("Fallback Native Download failed: " + e.message);
+                        throw e;
                     }
                 }
 
-                alert("3. Downlaod complete. Requesting camera roll permissions...");
-                await Media.requestPermissions();
-
-                alert("4. Saving file to camera roll...");
+                alert("3. Download complete. Saving to camera roll...");
                 await Media.savePhoto({ path: savedFileUri });
 
                 alert("Photo saved to your camera roll!");
