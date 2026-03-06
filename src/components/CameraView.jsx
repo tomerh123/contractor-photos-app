@@ -25,6 +25,7 @@ const CameraView = ({ projectId, navigateTo, returnView = 'HOME' }) => {
                     allowEditing: false,
                     resultType: CameraResultType.DataUrl,
                     source: CameraSource.Camera,
+                    saveToGallery: true,
                     width: 1536 // Balanced for high DPI markup without causing 15s base64 encoding blocks
                 });
 
