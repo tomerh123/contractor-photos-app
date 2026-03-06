@@ -48,8 +48,8 @@ const AllProjectsView = ({ navigateTo }) => {
             // Sort by most recently modified based on sortOrder
             projectsWithDates.sort((a, b) => {
                 return sortOrder === 'newest'
-                    ? b.lastModifiedTime - a.lastModifiedTime
-                    : a.lastModifiedTime - b.lastModifiedTime;
+                    ? a.lastModifiedTime - b.lastModifiedTime
+                    : b.lastModifiedTime - a.lastModifiedTime;
             });
 
             setSortedProjects(projectsWithDates);

@@ -5,7 +5,7 @@ import { ArrowLeft, Camera, Upload, Sparkles, MapPin, ImageIcon, CheckSquare, Fo
 
 import PunchListView from './PunchListView';
 
-const ProjectDetail = ({ projectId, navigateTo, initialPhotoId }) => {
+const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, returnView = 'HOME' }) => {
     const [activeTab, setActiveTab] = useState('GALLERY');
     const [project, setProject] = useState(() => db.getCachedProject(projectId));
     const [photos, setPhotos] = useState(() => db.getCachedPhotos(projectId) || []);
@@ -274,7 +274,7 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId }) => {
             />
 
             <header className="header" style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '64px' }}>
-                <button className="btn" onClick={() => activeFolderId ? setActiveFolderId(null) : navigateTo('HOME')} style={{ position: 'absolute', left: '1.5rem', top: '50%', transform: 'translateY(-50%)', padding: '0.5rem', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <button className="btn" onClick={() => activeFolderId ? setActiveFolderId(null) : navigateTo(returnView)} style={{ position: 'absolute', left: '1.5rem', top: '50%', transform: 'translateY(-50%)', padding: '0.5rem', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <ArrowLeft size={20} />
                 </button>
                 <div style={{ textAlign: 'center', overflow: 'hidden', padding: '0 50px', width: '100%' }}>
@@ -632,7 +632,7 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId }) => {
                 </div>
             ) : (
                 <div className="floating-dock">
-                    <button className="dock-btn" onClick={() => activeFolderId ? setActiveFolderId(null) : navigateTo('HOME')}><ArrowLeft size={24} /></button>
+                    <button className="dock-btn" onClick={() => activeFolderId ? setActiveFolderId(null) : navigateTo(returnView)}><ArrowLeft size={24} /></button>
                     <div style={{ width: '1px', height: '30px', backgroundColor: 'var(--border)' }}></div>
                     <button className="dock-btn main" onClick={() => navigateTo('CAMERA', projectId)}><Camera size={26} /></button>
                     <div style={{ width: '1px', height: '30px', backgroundColor: 'var(--border)' }}></div>
