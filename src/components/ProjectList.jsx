@@ -187,9 +187,9 @@ const ProjectList = ({ navigateTo }) => {
                 <h1 style={{ fontSize: '1.8rem', marginBottom: '1rem', textAlign: 'center' }}>Welcome, {currentUser?.Name?.split(' ')[0] || 'Tomer'}</h1>
 
                 {/* Workspace Section (Elevated to Top) */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '1.5rem', marginBottom: '1rem' }}>
-                    <h2 style={{ fontSize: '1.4rem' }}>Recent Projects</h2>
-                    <span onClick={() => navigateTo('ALL_PROJECTS')} style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 600, cursor: 'pointer' }}>View All</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem', marginBottom: '1rem' }}>
+                    <h2 style={{ fontSize: '1.4rem', margin: 0 }}>Recent Projects</h2>
+                    <span onClick={() => navigateTo('ALL_PROJECTS')} style={{ fontSize: '0.95rem', color: 'var(--primary-color)', backgroundColor: 'var(--surface)', padding: '6px 14px', borderRadius: '20px', fontWeight: 600, cursor: 'pointer', border: '1px solid var(--border)' }}>View All</span>
                 </div>
 
                 {/* Projects Carousel Feed */}
