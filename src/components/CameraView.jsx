@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Camera as CameraIcon } from 'lucide-react';
 
-const CameraView = ({ projectId, navigateTo }) => {
+const CameraView = ({ projectId, navigateTo, returnView = 'HOME' }) => {
     const hasRequested = useRef(false);
     const [error, setError] = useState(null);
 
@@ -31,12 +31,12 @@ const CameraView = ({ projectId, navigateTo }) => {
                 if (image && image.dataUrl) {
                     navigateTo('MARKUP', projectId, image.dataUrl);
                 } else {
-                    navigateTo('PROJECT_DETAIL', projectId);
+                    navigateTo(returnView, projectId);
                 }
             } catch (err) {
                 console.error("Camera Error Payload:", err);
                 if (err.message && err.message.includes('User cancelled')) {
-                    navigateTo('PROJECT_DETAIL', projectId);
+                    navigateTo(returnView, projectId);
                 } else {
                     setError("Could not launch the Native Apple Camera. Please ensure Hardware Camera permissions are granted in iOS Settings.");
                 }
@@ -58,8 +58,8 @@ const CameraView = ({ projectId, navigateTo }) => {
                 <>
                     <h2 style={{ color: 'var(--danger)', marginBottom: '1rem' }}>Hardware Stream Blocked</h2>
                     <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>{error}</p>
-                    <button className="btn btn-primary" onClick={() => navigateTo('PROJECT_DETAIL', projectId)}>
-                        Return to Project
+                    <button className="btn btn-primary" onClick={() => navigateTo(returnView, projectId)}>
+                        Return
                     </button>
                     <button className="btn" onClick={() => {
                         hasRequested.current = false;

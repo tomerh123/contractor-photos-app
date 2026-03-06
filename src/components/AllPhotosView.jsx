@@ -154,7 +154,7 @@ const AllPhotosView = ({ navigateTo, initialPhotoId }) => {
                                 >
                                     <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                         <span style={{ color: 'var(--text-secondary)', fontWeight: 400 }}>Filter:</span>
-                                        <span style={{ color: activeProjectFilter === 'All' ? 'var(--text-primary)' : 'var(--primary-color)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '200px' }}>
+                                        <span style={{ color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '200px' }}>
                                             {getFilterLabel()}
                                         </span>
                                     </span>

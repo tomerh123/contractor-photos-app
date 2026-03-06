@@ -82,7 +82,7 @@ function MainRoutes() {
             {underlyingView === 'PROFILE' && <ProfileView navigateTo={navigateTo} />}
 
             {/* Overlays mount ON TOP of the underlying view */}
-            {currentView === 'CAMERA' && <CameraView projectId={selectedProjectId} currentFolderId={activeFolderId} navigateTo={navigateTo} />}
+            {currentView === 'CAMERA' && <CameraView projectId={selectedProjectId} currentFolderId={activeFolderId} navigateTo={navigateTo} returnView={markupReturnView} />}
             {currentView === 'MARKUP' && <MarkupView projectId={selectedProjectId} currentFolderId={activeFolderId} photoUrl={capturedPhotoUrl} editingPhotoId={editingPhotoId} navigateTo={navigateTo} returnView={markupReturnView} />}
 
             {/* Public Shared Web Link */}
