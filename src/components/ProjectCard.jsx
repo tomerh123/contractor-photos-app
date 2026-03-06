@@ -4,7 +4,7 @@ import { useApp } from '../AppContext';
 import { Trash2, Edit2, Star, MapPin, RefreshCcw } from 'lucide-react';
 import AddressAutocomplete from './AddressAutocomplete';
 
-const ProjectCard = ({ project, navigateTo }) => {
+const ProjectCard = ({ project, navigateTo, hideLocation = false }) => {
     const [thumbnail, setThumbnail] = useState(null);
     const [openTodosCount, setOpenTodosCount] = useState(0);
     const [isEditing, setIsEditing] = useState(false);
@@ -86,9 +86,11 @@ const ProjectCard = ({ project, navigateTo }) => {
                         </span>
                     )}
                 </h3>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px', color: 'rgba(255,255,255,0.8)', fontSize: '0.85rem' }}>
-                    <MapPin size={12} /> {project.Location || 'No location set'}
-                </div>
+                {!hideLocation && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px', color: 'rgba(255,255,255,0.8)', fontSize: '0.85rem' }}>
+                        <MapPin size={12} /> {project.Location || 'No location set'}
+                    </div>
+                )}
                 <div style={{ marginTop: '4px', color: 'rgba(255,255,255,0.6)', fontSize: '0.75rem' }}>
                     Created {new Date(project.CreatedAt).toLocaleDateString()}
                 </div>
