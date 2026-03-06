@@ -67,13 +67,10 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
         setIsDownloading(true);
         try {
             if (Capacitor.isNativePlatform()) {
-                // Native: download to temp file, then save
-                alert("1. Starting native save process...");
                 const isDataUrl = currentPhoto.ImageFile.startsWith('data:');
                 let savedFileUri;
 
                 if (isDataUrl) {
-                    alert("2a. Saving cached photo...");
                     const base64Data = currentPhoto.ImageFile.split(',')[1];
                     const fileName = `photo_${Date.now()}.jpg`;
                     const savedFile = await Filesystem.writeFile({
@@ -84,36 +81,28 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
                     savedFileUri = savedFile.uri;
                 } else {
                     const fileName = `photo_${Date.now()}.jpg`;
-                    try {
-                        const response = await fetch(currentPhoto.ImageFile);
-                        if (!response.ok) throw new Error("Fetch failed");
-                        const blob = await response.blob();
-                        const base64Data = await new Promise((resolve, reject) => {
-                            const reader = new FileReader();
-                            reader.onloadend = () => resolve(reader.result.split(',')[1]);
-                            reader.onerror = reject;
-                            reader.readAsDataURL(blob);
-                        });
-
-                        const savedFile = await Filesystem.writeFile({
-                            path: fileName,
-                            data: base64Data,
-                            directory: Directory.Cache
-                        });
-                        savedFileUri = savedFile.uri;
-                        if (!savedFileUri.startsWith('file://')) {
-                            savedFileUri = 'file://' + savedFileUri;
-                        }
-                    } catch (e) {
-                        alert("Fallback Native Download failed: " + e.message);
-                        throw e;
+                    const response = await fetch(currentPhoto.ImageFile);
+                    if (!response.ok) throw new Error("Could not download photo from cloud.");
+                    const blob = await response.blob();
+                    const base64Data = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result.split(',')[1]);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(blob);
+                    });
+                    const savedFile = await Filesystem.writeFile({
+                        path: fileName,
+                        data: base64Data,
+                        directory: Directory.Cache
+                    });
+                    savedFileUri = savedFile.uri;
+                    if (!savedFileUri.startsWith('file://')) {
+                        savedFileUri = 'file://' + savedFileUri;
                     }
                 }
 
-                alert("3. Download complete. Saving to camera roll...");
                 await Media.savePhoto({ path: savedFileUri });
-
-                alert("Photo saved to your camera roll!");
+                alert("Saved!");
             } else {
                 // Web fallback
                 try {
