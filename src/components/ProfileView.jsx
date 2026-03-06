@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../AppContext';
-import { X, Camera, Edit2, Check, LogOut, AlertTriangle } from 'lucide-react';
+import { X, Camera, Edit2, Check, LogOut, AlertTriangle, Settings } from 'lucide-react';
 import { auth } from '../firebase';
 import { signOut, deleteUser } from 'firebase/auth';
 import * as db from '../db';
@@ -230,6 +230,19 @@ const ProfileView = ({ navigateTo }) => {
             </InfoSection>
 
             <div style={{ padding: '2rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center' }}>
+                <button
+                    onClick={() => navigateTo('SETTINGS')}
+                    style={{
+                        display: 'flex', alignItems: 'center', gap: '8px',
+                        padding: '12px 24px', borderRadius: '8px',
+                        backgroundColor: 'var(--surface-active)', border: '1px solid var(--border)',
+                        color: 'var(--text-primary)', fontSize: '1rem', fontWeight: 'bold',
+                        cursor: 'pointer', width: '100%', justifyContent: 'center'
+                    }}
+                >
+                    <Settings size={18} /> Settings
+                </button>
+
                 <button
                     onClick={() => setShowSignOutConfirm(true)}
                     style={{

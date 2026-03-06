@@ -4,7 +4,7 @@ import * as db from '../db';
 import {
     Folder, Image as ImageIcon, PenTool, Settings,
     Search, Bell, User, Plus, Camera, Sparkles,
-    Trash2, MapPin, Star
+    Trash2, MapPin, Star, Share2
 } from 'lucide-react';
 
 const QuickLink = ({ icon, title }) => (
@@ -220,12 +220,15 @@ const ProjectList = ({ navigateTo }) => {
                 {/* Quick Links Grid */}
                 <h2 style={{ fontSize: '1.3rem', marginTop: '0.5rem', marginBottom: '0.5rem' }}>Navigation</h2>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem', paddingBottom: '2rem' }}>
+                    <div style={{ gridColumn: '1 / -1' }} onClick={() => navigateTo('RECENT_PHOTOS')}>
+                        <QuickLink icon={<ImageIcon size={22} />} title="All Photos" />
+                    </div>
                     <div onClick={() => { setIsCreatingFromCamera(false); setShowModal(true); }}>
                         <QuickLink icon={<Plus size={22} />} title="New Project" />
                     </div>
-                    <div onClick={() => navigateTo('RECENT_PHOTOS')}><QuickLink icon={<ImageIcon size={22} />} title="Photos" /></div>
-                    <div onClick={() => navigateTo('MY_MARKUPS')}><QuickLink icon={<PenTool size={22} />} title="My Markups" /></div>
-                    <div onClick={() => navigateTo('SETTINGS')}><QuickLink icon={<Settings size={22} />} title="Settings" /></div>
+                    <div onClick={() => alert("Select a project from 'All Projects' to share it.")}>
+                        <QuickLink icon={<Share2 size={22} />} title="Share Project" />
+                    </div>
                 </div>
             </div>
 
