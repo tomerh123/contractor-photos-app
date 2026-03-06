@@ -168,18 +168,18 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
         >
             {/* Header Controls */}
             <header style={{
-                padding: 'calc(env(safe-area-inset-top) + 2.8rem) 1rem 1rem 1rem',
+                paddingTop: 'calc(env(safe-area-inset-top) + 0.75rem)',
+                paddingBottom: '0.75rem',
+                paddingLeft: '0.75rem',
+                paddingRight: '1rem',
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
+                flexShrink: 0,
                 opacity: showUI ? 1 : 0,
                 transition: 'opacity 0.2s ease',
                 pointerEvents: showUI ? 'auto' : 'none',
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                zIndex: 10
+                position: 'relative',
             }}>
                 <button
                     onClick={onClose}
@@ -306,16 +306,13 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
             <div style={{
                 backgroundColor: 'rgba(31, 41, 55, 0.9)',
                 color: 'var(--text-primary)',
-                borderTop: '1px solid var(--border)',
+                borderTop: showUI ? '1px solid var(--border)' : 'none',
                 backdropFilter: 'blur(10px)',
-                position: 'absolute',
-                bottom: 0,
-                left: 0,
-                right: 0,
-                zIndex: 50,
+                flexShrink: 0,
                 paddingBottom: 'env(safe-area-inset-bottom)',
-                transform: showUI ? 'translateY(0)' : 'translateY(100%)',
-                transition: 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.1)',
+                maxHeight: showUI ? '300px' : '0px',
+                overflow: 'hidden',
+                transition: 'max-height 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.1)',
                 display: 'flex',
                 flexDirection: 'column'
             }}>
