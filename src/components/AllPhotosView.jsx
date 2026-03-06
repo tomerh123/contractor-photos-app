@@ -13,8 +13,8 @@ const AllPhotosView = ({ navigateTo, initialPhotoId }) => {
     // To optionally show which project a photo belongs to
     const [projects, setProjects] = useState(() => db.getCachedAllProjects() || []);
     const [folders, setFolders] = useState(() => db.getCachedAllFolders() || []);
-    const [activeTagFilter, setActiveTagFilter] = useState('All');
-    const [showTagDropdown, setShowTagDropdown] = useState(false);
+    const [activeProjectFilter, setActiveProjectFilter] = useState('All');
+    const [showProjectDropdown, setShowProjectDropdown] = useState(false);
 
     const openPhotoViewer = (photo) => {
         setSelectedPhoto(photo);
@@ -90,8 +90,19 @@ const AllPhotosView = ({ navigateTo, initialPhotoId }) => {
 
     if (loading) return <div className="content-pad">Loading photos...</div>;
 
-    const uniqueTags = Array.from(new Set(photos.flatMap(p => p.Tags || []))).sort();
-    const displayedPhotos = photos.filter(p => activeTagFilter === 'All' ? true : (p.Tags && p.Tags.includes(activeTagFilter)));
+    const uniqueProjectIds = Array.from(new Set(photos.map(p => p.ProjectID)));
+    const uniqueProjects = uniqueProjectIds.map(id => ({
+        id,
+        name: getProjectName(id)
+    })).sort((a, b) => a.name.localeCompare(b.name));
+
+    const displayedPhotos = photos.filter(p => activeProjectFilter === 'All' ? true : p.ProjectID === activeProjectFilter);
+
+    const getFilterLabel = () => {
+        if (activeProjectFilter === 'All') return 'All Projects';
+        const p = uniqueProjects.find(up => up.id === activeProjectFilter);
+        return p ? p.name : 'Unknown Project';
+    };
 
     return (
         <div className="project-detail-view" style={{ paddingBottom: '110px' }}>
@@ -134,38 +145,47 @@ const AllPhotosView = ({ navigateTo, initialPhotoId }) => {
                     </div>
                 ) : (
                     <>
-                        {/* Tag Filters */}
-                        {uniqueTags.length > 0 && (
+                        {/* Project Filters */}
+                        {uniqueProjects.length > 0 && (
                             <div style={{ position: 'relative', marginBottom: '1rem', padding: '0 1.5rem', marginTop: '1rem' }}>
                                 <button
-                                    onClick={() => setShowTagDropdown(v => !v)}
+                                    onClick={() => setShowProjectDropdown(v => !v)}
                                     style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '10px', padding: '8px 14px', cursor: 'pointer', color: 'var(--text-primary)', fontSize: '0.9rem', fontWeight: 600, width: '100%', justifyContent: 'space-between' }}
                                 >
                                     <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                         <span style={{ color: 'var(--text-secondary)', fontWeight: 400 }}>Filter:</span>
-                                        <span style={{ color: activeTagFilter === 'All' ? 'var(--text-primary)' : 'var(--primary-color)' }}>
-                                            {activeTagFilter === 'All' ? 'All Photos' : `#${activeTagFilter}`}
+                                        <span style={{ color: activeProjectFilter === 'All' ? 'var(--text-primary)' : 'var(--primary-color)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '200px' }}>
+                                            {getFilterLabel()}
                                         </span>
                                     </span>
-                                    <ChevronDown size={16} color="var(--text-secondary)" style={{ transform: showTagDropdown ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+                                    <ChevronDown size={16} color="var(--text-secondary)" style={{ transform: showProjectDropdown ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s', flexShrink: 0 }} />
                                 </button>
 
-                                {showTagDropdown && (
+                                {showProjectDropdown && (
                                     <>
                                         {/* Backdrop */}
-                                        <div onClick={() => setShowTagDropdown(false)} style={{ position: 'fixed', inset: 0, zIndex: 50 }} />
+                                        <div onClick={() => setShowProjectDropdown(false)} style={{ position: 'fixed', inset: 0, zIndex: 50 }} />
                                         {/* Panel */}
-                                        <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: '1.5rem', right: '1.5rem', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden', zIndex: 51, boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}>
-                                            {['All', ...uniqueTags].map(tag => (
+                                        <div className="hide-scrollbar" style={{ position: 'absolute', top: 'calc(100% + 6px)', left: '1.5rem', right: '1.5rem', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', overflowY: 'auto', maxHeight: '300px', zIndex: 51, boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}>
+                                            <div
+                                                onClick={() => { setActiveProjectFilter('All'); setShowProjectDropdown(false); }}
+                                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border)', backgroundColor: activeProjectFilter === 'All' ? 'rgba(249,115,22,0.1)' : 'transparent' }}
+                                            >
+                                                <span style={{ fontSize: '0.9rem', fontWeight: 600, color: activeProjectFilter === 'All' ? 'var(--primary-color)' : 'var(--text-primary)' }}>
+                                                    All Projects
+                                                </span>
+                                                {activeProjectFilter === 'All' && <Check size={16} color="var(--primary-color)" />}
+                                            </div>
+                                            {uniqueProjects.map(proj => (
                                                 <div
-                                                    key={tag}
-                                                    onClick={() => { setActiveTagFilter(tag); setShowTagDropdown(false); }}
-                                                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border)', backgroundColor: activeTagFilter === tag ? 'rgba(249,115,22,0.1)' : 'transparent' }}
+                                                    key={proj.id}
+                                                    onClick={() => { setActiveProjectFilter(proj.id); setShowProjectDropdown(false); }}
+                                                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border)', backgroundColor: activeProjectFilter === proj.id ? 'rgba(249,115,22,0.1)' : 'transparent' }}
                                                 >
-                                                    <span style={{ fontSize: '0.9rem', fontWeight: 600, color: activeTagFilter === tag ? 'var(--primary-color)' : 'var(--text-primary)' }}>
-                                                        {tag === 'All' ? 'All Photos' : `#${tag}`}
+                                                    <span style={{ fontSize: '0.9rem', fontWeight: 600, color: activeProjectFilter === proj.id ? 'var(--primary-color)' : 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                        {proj.name}
                                                     </span>
-                                                    {activeTagFilter === tag && <Check size={16} color="var(--primary-color)" />}
+                                                    {activeProjectFilter === proj.id && <Check size={16} color="var(--primary-color)" flexShrink={0} />}
                                                 </div>
                                             ))}
                                         </div>
