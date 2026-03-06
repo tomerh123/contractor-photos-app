@@ -36,6 +36,7 @@ const ProjectList = ({ navigateTo }) => {
     const { currentUser, projects, loading, refreshProjects } = useApp();
     const [showModal, setShowModal] = useState(false);
     const [showCameraProjectSelector, setShowCameraProjectSelector] = useState(false);
+    const [showShareProjectSelector, setShowShareProjectSelector] = useState(false);
     const [newProjectName, setNewProjectName] = useState('');
     const [newLocation, setNewLocation] = useState('');
     const [newLat, setNewLat] = useState(null);
@@ -220,13 +221,16 @@ const ProjectList = ({ navigateTo }) => {
                 {/* Quick Links Grid */}
                 <h2 style={{ fontSize: '1.3rem', marginTop: '0.5rem', marginBottom: '0.5rem' }}>Navigation</h2>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem', paddingBottom: '2rem' }}>
-                    <div style={{ gridColumn: '1 / -1' }} onClick={() => navigateTo('RECENT_PHOTOS')}>
+                    <div onClick={() => navigateTo('RECENT_PHOTOS')}>
                         <QuickLink icon={<ImageIcon size={22} />} title="All Photos" />
+                    </div>
+                    <div onClick={() => navigateTo('ALL_PROJECTS')}>
+                        <QuickLink icon={<Folder size={22} />} title="All Projects" />
                     </div>
                     <div onClick={() => { setIsCreatingFromCamera(false); setShowModal(true); }}>
                         <QuickLink icon={<Plus size={22} />} title="New Project" />
                     </div>
-                    <div onClick={() => alert("Select a project from 'All Projects' to share it.")}>
+                    <div onClick={() => setShowShareProjectSelector(true)}>
                         <QuickLink icon={<Share2 size={22} />} title="Share Project" />
                     </div>
                 </div>
@@ -371,6 +375,60 @@ const ProjectList = ({ navigateTo }) => {
                             )}
                         </div>
                         <button className="btn" onClick={() => setShowCameraProjectSelector(false)} style={{ width: '100%' }}>
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            )}
+            {/* Share Project Selector Modal */}
+            {showShareProjectSelector && (
+                <div className="modal-overlay" onClick={() => setShowShareProjectSelector(false)} style={{ zIndex: 1100 }}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()} style={{
+                        padding: '1.5rem',
+                        display: 'flex', flexDirection: 'column', gap: '1rem',
+                        maxHeight: '80vh'
+                    }}>
+                        <h2 style={{ fontSize: '1.4rem', fontWeight: 'bold' }}>Share Project</h2>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
+                            Select a project from your library to generate a public, read-only viewing link.
+                        </p>
+                        <div className="custom-scrollbar" style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', overflowY: 'auto' }}>
+                            {projects.length === 0 ? (
+                                <p style={{ color: 'var(--text-secondary)', marginTop: '1rem', textAlign: 'center' }}>
+                                    No active projects found.
+                                </p>
+                            ) : (
+                                projects.map(p => (
+                                    <button
+                                        key={p.ProjectID}
+                                        onClick={async () => {
+                                            setShowShareProjectSelector(false);
+                                            // Pre-fetch share payload directly
+                                            const payloadRaw = await db.generateSharePayload(p.ProjectID);
+                                            const payloadB64 = btoa(encodeURIComponent(JSON.stringify(payloadRaw)));
+                                            navigateTo('SHARED_VIEW', null, payloadB64);
+                                        }}
+                                        style={{
+                                            display: 'flex', alignItems: 'center', textAlign: 'left', padding: '1rem',
+                                            backgroundColor: 'var(--background)', border: '1px solid var(--border)',
+                                            borderRadius: '12px', cursor: 'pointer', width: '100%',
+                                            transition: 'border-color 0.2s',
+                                        }}
+                                    >
+                                        <span style={{ marginRight: '1rem', color: 'var(--primary-color)' }}>
+                                            <Folder size={24} />
+                                        </span>
+                                        <div>
+                                            <div style={{ fontWeight: 'bold', color: 'var(--text-primary)', fontSize: '1.05rem' }}>{p.ProjectName}</div>
+                                            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.2rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                <MapPin size={12} /> {p.Location}
+                                            </div>
+                                        </div>
+                                    </button>
+                                ))
+                            )}
+                        </div>
+                        <button className="btn" onClick={() => setShowShareProjectSelector(false)} style={{ width: '100%' }}>
                             Cancel
                         </button>
                     </div>

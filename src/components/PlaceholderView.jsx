@@ -1,7 +1,7 @@
 import React from 'react';
 import { ArrowLeft, Settings, User, Image as ImageIcon, PenTool } from 'lucide-react';
 
-const PlaceholderView = ({ title, type, navigateTo }) => {
+const PlaceholderView = ({ title, type, navigateTo, returnView = 'HOME' }) => {
     // Generate dummy items based on type
     const getDummyContent = () => {
         if (type === 'settings' || type === 'profile') {
@@ -31,7 +31,7 @@ const PlaceholderView = ({ title, type, navigateTo }) => {
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: 'var(--background)' }}>
             <header className="header" style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '64px', borderBottom: '1px solid var(--border)' }}>
                 <button
-                    onClick={() => navigateTo('HOME')}
+                    onClick={() => navigateTo(returnView)}
                     style={{ position: 'absolute', left: '1.5rem', background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
                 >
                     <ArrowLeft size={24} />

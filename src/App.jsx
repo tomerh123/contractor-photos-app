@@ -25,6 +25,7 @@ function MainRoutes() {
     const [editingPhotoId, setEditingPhotoId] = useState(null);
     const [markupReturnView, setMarkupReturnView] = useState('PROJECT_DETAIL');
     const [projectDetailReturnView, setProjectDetailReturnView] = useState('HOME');
+    const [settingsReturnView, setSettingsReturnView] = useState('HOME');
     const [activeFolderId, setActiveFolderId] = useState(null);
 
     const navigateTo = (view, projectId = null, photoData = null, existingPhotoId = null, folderId = undefined) => {
@@ -48,6 +49,11 @@ function MainRoutes() {
         // Smart return path logic for Project Details
         if (view === 'PROJECT_DETAIL' && (currentView === 'HOME' || currentView === 'ALL_PROJECTS')) {
             setProjectDetailReturnView(currentView);
+        }
+
+        // Smart return path logic for Settings
+        if (view === 'SETTINGS' && currentView !== 'SETTINGS') {
+            setSettingsReturnView(currentView);
         }
 
         setCurrentView(view);
@@ -78,7 +84,7 @@ function MainRoutes() {
             {underlyingView === 'PROJECT_DETAIL' && <ProjectDetail projectId={selectedProjectId} navigateTo={navigateTo} initialPhotoId={editingPhotoId} returnView={projectDetailReturnView} />}
             {underlyingView === 'RECENT_PHOTOS' && <AllPhotosView navigateTo={navigateTo} initialPhotoId={editingPhotoId} />}
             {underlyingView === 'MY_MARKUPS' && <MyMarkupsView navigateTo={navigateTo} initialPhotoId={editingPhotoId} />}
-            {underlyingView === 'SETTINGS' && <PlaceholderView title="Settings" type="settings" navigateTo={navigateTo} />}
+            {underlyingView === 'SETTINGS' && <PlaceholderView title="Settings" type="settings" navigateTo={navigateTo} returnView={settingsReturnView} />}
             {underlyingView === 'PROFILE' && <ProfileView navigateTo={navigateTo} />}
 
             {/* Overlays mount ON TOP of the underlying view */}
