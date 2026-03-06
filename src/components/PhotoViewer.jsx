@@ -168,18 +168,22 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
         >
             {/* Header Controls */}
             <header style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                zIndex: 10,
                 paddingTop: 'calc(env(safe-area-inset-top) + 0.75rem)',
-                paddingBottom: '0.75rem',
+                paddingBottom: '1.5rem',
                 paddingLeft: '0.75rem',
                 paddingRight: '1rem',
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
-                flexShrink: 0,
+                background: 'linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, transparent 100%)',
                 opacity: showUI ? 1 : 0,
                 transition: 'opacity 0.2s ease',
                 pointerEvents: showUI ? 'auto' : 'none',
-                position: 'relative',
             }}>
                 <button
                     onClick={onClose}
@@ -304,15 +308,18 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
 
             {/* Bottom Action Bar */}
             <div style={{
-                backgroundColor: 'rgba(31, 41, 55, 0.9)',
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                zIndex: 50,
+                backgroundColor: 'rgba(20, 20, 20, 0.85)',
                 color: 'var(--text-primary)',
-                borderTop: showUI ? '1px solid var(--border)' : 'none',
-                backdropFilter: 'blur(10px)',
-                flexShrink: 0,
+                borderTop: '1px solid rgba(255,255,255,0.1)',
+                backdropFilter: 'blur(20px)',
                 paddingBottom: 'env(safe-area-inset-bottom)',
-                maxHeight: showUI ? '300px' : '0px',
-                overflow: 'hidden',
-                transition: 'max-height 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.1)',
+                transform: showUI ? 'translateY(0)' : 'translateY(100%)',
+                transition: 'transform 0.25s ease',
                 display: 'flex',
                 flexDirection: 'column'
             }}>
