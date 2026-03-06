@@ -11,6 +11,7 @@ const AllProjectsView = ({ navigateTo }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [sortOrder, setSortOrder] = useState('newest');
 
+    const [topLevelTab, setTopLevelTab] = useState('My Projects'); // 'My Projects' or 'Shared With Me'
     const [activeTab, setActiveTab] = useState('Active'); // 'Active', 'Favorites', or 'Archived'
 
     useEffect(() => {
@@ -104,38 +105,79 @@ const AllProjectsView = ({ navigateTo }) => {
             </header>
 
             <div style={{ padding: '1.5rem 1.5rem 0 1.5rem' }}>
-                <div style={{ position: 'relative' }}>
-                    <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }}>
-                        <Search size={18} />
-                    </div>
-                    <input
-                        type="text"
-                        placeholder="Search projects..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                {/* Top Level Segmented Control */}
+                <div style={{ display: 'flex', backgroundColor: 'var(--surface-active)', borderRadius: '12px', padding: '4px', marginBottom: '1.5rem' }}>
+                    <div
+                        onClick={() => setTopLevelTab('My Projects')}
                         style={{
-                            width: '100%',
-                            backgroundColor: 'var(--surface-active)',
-                            border: '1px solid var(--border)',
-                            borderRadius: '16px',
-                            padding: '1rem 1rem 1rem 2.5rem',
-                            color: 'var(--text-primary)',
-                            fontSize: '1rem',
-                            outline: 'none'
+                            flex: 1, textAlign: 'center', padding: '10px 0', borderRadius: '8px',
+                            backgroundColor: topLevelTab === 'My Projects' ? 'var(--surface)' : 'transparent',
+                            color: topLevelTab === 'My Projects' ? 'var(--text-primary)' : 'var(--text-secondary)',
+                            fontWeight: topLevelTab === 'My Projects' ? 600 : 400,
+                            boxShadow: topLevelTab === 'My Projects' ? '0 2px 8px rgba(0,0,0,0.2)' : 'none',
+                            cursor: 'pointer', transition: 'all 0.2s ease'
                         }}
-                    />
+                    >
+                        My Projects
+                    </div>
+                    <div
+                        onClick={() => setTopLevelTab('Shared With Me')}
+                        style={{
+                            flex: 1, textAlign: 'center', padding: '10px 0', borderRadius: '8px',
+                            backgroundColor: topLevelTab === 'Shared With Me' ? 'var(--surface)' : 'transparent',
+                            color: topLevelTab === 'Shared With Me' ? 'var(--text-primary)' : 'var(--text-secondary)',
+                            fontWeight: topLevelTab === 'Shared With Me' ? 600 : 400,
+                            boxShadow: topLevelTab === 'Shared With Me' ? '0 2px 8px rgba(0,0,0,0.2)' : 'none',
+                            cursor: 'pointer', transition: 'all 0.2s ease'
+                        }}
+                    >
+                        Shared With Me
+                    </div>
                 </div>
 
-                {/* Tabs */}
-                <div style={{ display: 'flex', gap: '1.5rem', borderBottom: '1px solid var(--border)', marginTop: '1.5rem' }}>
-                    <div onClick={() => setActiveTab('Active')} style={{ cursor: 'pointer', paddingBottom: '0.6rem', borderBottom: activeTab === 'Active' ? '2px solid var(--primary-color)' : '2px solid transparent', fontWeight: 600, color: activeTab === 'Active' ? 'var(--text-primary)' : 'var(--text-secondary)' }}>Active</div>
-                    <div onClick={() => setActiveTab('Favorites')} style={{ cursor: 'pointer', paddingBottom: '0.6rem', borderBottom: activeTab === 'Favorites' ? '2px solid var(--primary-color)' : '2px solid transparent', color: activeTab === 'Favorites' ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: 600 }}>Favorites</div>
-                    <div onClick={() => setActiveTab('Archived')} style={{ cursor: 'pointer', paddingBottom: '0.6rem', borderBottom: activeTab === 'Archived' ? '2px solid var(--primary-color)' : '2px solid transparent', color: activeTab === 'Archived' ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: 600 }}>Archived</div>
-                </div>
+                {topLevelTab === 'My Projects' && (
+                    <>
+                        <div style={{ position: 'relative' }}>
+                            <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }}>
+                                <Search size={18} />
+                            </div>
+                            <input
+                                type="text"
+                                placeholder="Search projects..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                style={{
+                                    width: '100%',
+                                    backgroundColor: 'var(--surface-active)',
+                                    border: '1px solid var(--border)',
+                                    borderRadius: '16px',
+                                    padding: '1rem 1rem 1rem 2.5rem',
+                                    color: 'var(--text-primary)',
+                                    fontSize: '1rem',
+                                    outline: 'none'
+                                }}
+                            />
+                        </div>
+
+                        {/* Sub Tabs */}
+                        <div style={{ display: 'flex', gap: '1.5rem', borderBottom: '1px solid var(--border)', marginTop: '1.5rem' }}>
+                            <div onClick={() => setActiveTab('Active')} style={{ cursor: 'pointer', paddingBottom: '0.6rem', borderBottom: activeTab === 'Active' ? '2px solid var(--primary-color)' : '2px solid transparent', fontWeight: 600, color: activeTab === 'Active' ? 'var(--text-primary)' : 'var(--text-secondary)' }}>Active</div>
+                            <div onClick={() => setActiveTab('Favorites')} style={{ cursor: 'pointer', paddingBottom: '0.6rem', borderBottom: activeTab === 'Favorites' ? '2px solid var(--primary-color)' : '2px solid transparent', color: activeTab === 'Favorites' ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: 600 }}>Favorites</div>
+                            <div onClick={() => setActiveTab('Archived')} style={{ cursor: 'pointer', paddingBottom: '0.6rem', borderBottom: activeTab === 'Archived' ? '2px solid var(--primary-color)' : '2px solid transparent', color: activeTab === 'Archived' ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: 600 }}>Archived</div>
+                        </div>
+                    </>
+                )}
             </div>
 
             <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem' }}>
-                {isLoading ? (
+                {topLevelTab === 'Shared With Me' ? (
+                    <div style={{ textAlign: 'center', color: 'var(--text-secondary)', marginTop: '2rem' }}>
+                        <div style={{ fontSize: '3rem', marginBottom: '1rem', opacity: 0.5 }}>🤝</div>
+                        <h3 style={{ color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Shared With Me</h3>
+                        <p>Projects that other users share with you will appear here.</p>
+                        <p style={{ marginTop: '0.5rem', fontSize: '0.85rem', opacity: 0.7 }}>You haven't received any shared projects yet.</p>
+                    </div>
+                ) : isLoading ? (
                     <div style={{ textAlign: 'center', color: 'var(--text-secondary)', marginTop: '2rem' }}>
                         Loading projects...
                     </div>
