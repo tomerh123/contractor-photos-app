@@ -182,7 +182,7 @@ const ProjectList = ({ navigateTo }) => {
                 </div>
             </header>
 
-            <div style={{ padding: '0 1.5rem 110px 1.5rem' }}>
+            <div style={{ padding: '0 1.5rem 150px 1.5rem' }}>
                 {/* Greeting */}
                 <h1 style={{ fontSize: '1.8rem', marginBottom: '1rem', textAlign: 'center' }}>Welcome, {currentUser?.Name?.split(' ')[0] || 'Tomer'}</h1>
 
