@@ -187,7 +187,7 @@ const ProjectList = ({ navigateTo }) => {
                 <h1 style={{ fontSize: '1.8rem', marginBottom: '1rem', textAlign: 'center' }}>Welcome, {currentUser?.Name?.split(' ')[0] || 'Tomer'}</h1>
 
                 {/* Workspace Section (Elevated to Top) */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '2rem', marginBottom: '1.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '0.5rem', marginBottom: '1rem' }}>
                     <h2 style={{ fontSize: '1.4rem' }}>Recent Projects</h2>
                     <span onClick={() => navigateTo('ALL_PROJECTS')} style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 600, cursor: 'pointer' }}>View All</span>
                 </div>
@@ -218,7 +218,7 @@ const ProjectList = ({ navigateTo }) => {
                 )}
 
                 {/* Quick Links Grid */}
-                <h2 style={{ fontSize: '1.3rem', marginTop: '1.5rem', marginBottom: '1rem' }}>Navigation</h2>
+                <h2 style={{ fontSize: '1.3rem', marginTop: '0.5rem', marginBottom: '0.5rem' }}>Navigation</h2>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem', paddingBottom: '150px' }}>
                     <div onClick={() => { setIsCreatingFromCamera(false); setShowModal(true); }}>
                         <QuickLink icon={<Plus size={22} />} title="New Project" />
