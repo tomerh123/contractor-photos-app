@@ -220,32 +220,12 @@ const ProjectList = ({ navigateTo }) => {
                 {/* Quick Links Grid */}
                 <h2 style={{ fontSize: '1.3rem', marginTop: '1rem', marginBottom: '1rem' }}>Navigation</h2>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem', marginBottom: '2rem' }}>
-                    <div onClick={() => navigateTo('ALL_PROJECTS')}><QuickLink icon={<Folder size={22} />} title="All Projects" /></div>
+                    <div onClick={() => { setIsCreatingFromCamera(false); setShowModal(true); }}>
+                        <QuickLink icon={<Plus size={22} />} title="New Project" />
+                    </div>
                     <div onClick={() => navigateTo('RECENT_PHOTOS')}><QuickLink icon={<ImageIcon size={22} />} title="Photos" /></div>
                     <div onClick={() => navigateTo('MY_MARKUPS')}><QuickLink icon={<PenTool size={22} />} title="My Markups" /></div>
                     <div onClick={() => navigateTo('SETTINGS')}><QuickLink icon={<Settings size={22} />} title="Settings" /></div>
-                </div>
-
-                {/* Activity Section */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '1rem' }}>
-                    <h2 style={{ fontSize: '1.3rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        Quick Actions
-                    </h2>
-                </div>
-                <div className="hide-scrollbar" style={{ display: 'flex', gap: '1rem', overflowX: 'auto', paddingBottom: '1rem', margin: '0 -1.5rem', paddingLeft: '1.5rem' }}>
-                    {/* Meaningful Action Cards */}
-                    <div
-                        onClick={() => {
-                            setIsCreatingFromCamera(false);
-                            setShowModal(true);
-                        }}
-                        style={{ width: '130px', flex: 'none', cursor: 'pointer' }}
-                    >
-                        <div style={{ width: '130px', height: '130px', borderRadius: '24px', backgroundColor: 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-color)', border: '1px solid var(--border)', transition: 'transform 0.2s' }}>
-                            <Plus size={40} />
-                        </div>
-                        <p style={{ textAlign: 'center', marginTop: '0.6rem', fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)' }}>New Project</p>
-                    </div>
                 </div>
             </div>
 

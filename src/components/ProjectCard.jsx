@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import * as db from '../db';
 import { useApp } from '../AppContext';
 import { Trash2, Edit2, Star, MapPin, RefreshCcw } from 'lucide-react';
@@ -194,7 +195,7 @@ const ProjectCard = ({ project, navigateTo, hideLocation = false }) => {
 
             {/* Edit Project Modal */}
             {
-                isEditing && (
+                isEditing && createPortal(
                     <div className="modal-overlay" onClick={(e) => { e.stopPropagation(); setIsEditing(false); }}>
                         <div className="modal-content" onClick={e => e.stopPropagation()}>
                             <h2 style={{ marginBottom: '1.5rem' }}>Edit Project Details</h2>
@@ -241,12 +242,13 @@ const ProjectCard = ({ project, navigateTo, hideLocation = false }) => {
                                 </div>
                             </form>
                         </div>
-                    </div>
+                    </div>,
+                    document.body
                 )}
 
             {/* Archive Confirmation Modal */}
             {
-                showArchiveConfirm && (
+                showArchiveConfirm && createPortal(
                     <div className="modal-overlay" onClick={(e) => { e.stopPropagation(); setShowArchiveConfirm(false); }} style={{ zIndex: 1000, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', padding: '1.5rem' }}>
                         <div className="modal-content" onClick={e => e.stopPropagation()} style={{ padding: '2rem', textAlign: 'center', maxWidth: '300px', borderRadius: '24px' }}>
                             <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', width: '56px', height: '56px', borderRadius: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem auto' }}>
@@ -272,12 +274,13 @@ const ProjectCard = ({ project, navigateTo, hideLocation = false }) => {
                                 </button>
                             </div>
                         </div>
-                    </div>
+                    </div>,
+                    document.body
                 )}
 
             {/* Permanent Delete Confirmation Modal */}
             {
-                showDeleteConfirm && (
+                showDeleteConfirm && createPortal(
                     <div className="modal-overlay" onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(false); }} style={{ zIndex: 1000, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', padding: '1.5rem' }}>
                         <div className="modal-content" onClick={e => e.stopPropagation()} style={{ padding: '2rem', textAlign: 'center', maxWidth: '300px', borderRadius: '24px' }}>
                             <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', width: '56px', height: '56px', borderRadius: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem auto' }}>
@@ -303,7 +306,8 @@ const ProjectCard = ({ project, navigateTo, hideLocation = false }) => {
                                 </button>
                             </div>
                         </div>
-                    </div>
+                    </div>,
+                    document.body
                 )}
         </div>
     );
