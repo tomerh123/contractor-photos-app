@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Trash2, MessageSquare, PenTool } from 'lucide-react';
+import { Trash2, MessageSquare, PenTool, Download } from 'lucide-react';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Media } from '@capacitor-community/media';
+import { Capacitor } from '@capacitor/core';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Zoom } from 'swiper/modules';
 import 'swiper/css';
@@ -14,6 +17,7 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
     const [selectedTags, setSelectedTags] = useState([]);
     const [isSaving, setIsSaving] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [isDownloading, setIsDownloading] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
 
     // Swiper ref for manual navigation
@@ -57,6 +61,70 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
 
     const handleDelete = () => {
         setShowDeleteModal(true);
+    };
+
+    const handleDownload = async () => {
+        setIsDownloading(true);
+        try {
+            if (Capacitor.isNativePlatform()) {
+                // Native: download to temp file, then save
+                const isDataUrl = currentPhoto.ImageFile.startsWith('data:');
+                let savedFileUri;
+
+                if (isDataUrl) {
+                    const base64Data = currentPhoto.ImageFile.split(',')[1];
+                    const fileName = `photo_${Date.now()}.jpg`;
+                    const savedFile = await Filesystem.writeFile({
+                        path: fileName,
+                        data: base64Data,
+                        directory: Directory.Cache
+                    });
+                    savedFileUri = savedFile.uri;
+                } else {
+                    const response = await fetch(currentPhoto.ImageFile);
+                    const blob = await response.blob();
+
+                    const base64Data = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result.split(',')[1]);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(blob);
+                    });
+
+                    const fileName = `photo_${Date.now()}.jpg`;
+                    const savedFile = await Filesystem.writeFile({
+                        path: fileName,
+                        data: base64Data,
+                        directory: Directory.Cache
+                    });
+                    savedFileUri = savedFile.uri;
+                }
+
+                await Media.requestPermissions();
+                await Media.savePhoto({ path: savedFileUri });
+
+                alert("Photo saved to your camera roll!");
+            } else {
+                // Web fallback
+                const response = await fetch(currentPhoto.ImageFile);
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = `photo_${Date.now()}.jpg`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                alert("Photo downloaded!");
+            }
+        } catch (err) {
+            console.error("Error saving photo:", err);
+            alert("Failed to save photo.");
+        } finally {
+            setIsDownloading(false);
+        }
     };
 
     const confirmDelete = async () => {
@@ -273,6 +341,15 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
                             >
                                 <PenTool size={24} />
                                 <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>Annotate</span>
+                            </button>
+
+                            <button
+                                onClick={handleDownload}
+                                disabled={isDownloading}
+                                style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', opacity: isDownloading ? 0.5 : 1 }}
+                            >
+                                <Download size={24} />
+                                <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>{isDownloading ? 'Saving...' : 'Save'}</span>
                             </button>
                         </div>
                     </>

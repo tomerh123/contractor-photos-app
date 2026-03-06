@@ -11,8 +11,11 @@
     "deploy": "gh-pages -d dist"
   },
   "dependencies": {
+    "@capacitor-community/media": "^9.0.2",
     "@capacitor/camera": "^8.0.1",
     "@capacitor/core": "^8.1.0",
+    "@capacitor/filesystem": "^8.1.2",
+    "@capacitor/share": "^8.0.1",
     "firebase": "^12.10.0",
     "idb-keyval": "^6.2.2",
     "lucide-react": "^0.575.0",
