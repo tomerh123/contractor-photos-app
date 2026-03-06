@@ -26,6 +26,7 @@ function MainRoutes() {
     const [markupReturnView, setMarkupReturnView] = useState('PROJECT_DETAIL');
     const [projectDetailReturnView, setProjectDetailReturnView] = useState('HOME');
     const [settingsReturnView, setSettingsReturnView] = useState('HOME');
+    const [cameraReturnView, setCameraReturnView] = useState('HOME');
     const [activeFolderId, setActiveFolderId] = useState(null);
 
     const navigateTo = (view, projectId = null, photoData = null, existingPhotoId = null, folderId = undefined) => {
@@ -40,10 +41,12 @@ function MainRoutes() {
         }
 
         // Smart return path logic for Markup
-        if (view === 'MARKUP' && currentView !== 'CAMERA') {
-            setMarkupReturnView(currentView);
+        if (view === 'MARKUP') {
+            // Always return to the project after saving a markup/new photo
+            setMarkupReturnView('PROJECT_DETAIL');
         } else if (view === 'CAMERA') {
-            setMarkupReturnView(currentView);
+            // Track where the user came from so cancel goes back there
+            setCameraReturnView(currentView);
         }
 
         // Smart return path logic for Project Details
@@ -88,7 +91,7 @@ function MainRoutes() {
             {underlyingView === 'PROFILE' && <ProfileView navigateTo={navigateTo} />}
 
             {/* Overlays mount ON TOP of the underlying view */}
-            {currentView === 'CAMERA' && <CameraView projectId={selectedProjectId} currentFolderId={activeFolderId} navigateTo={navigateTo} returnView={markupReturnView} />}
+            {currentView === 'CAMERA' && <CameraView projectId={selectedProjectId} currentFolderId={activeFolderId} navigateTo={navigateTo} returnView={cameraReturnView} />}
             {currentView === 'MARKUP' && <MarkupView projectId={selectedProjectId} currentFolderId={activeFolderId} photoUrl={capturedPhotoUrl} editingPhotoId={editingPhotoId} navigateTo={navigateTo} returnView={markupReturnView} />}
 
             {/* Public Shared Web Link */}
