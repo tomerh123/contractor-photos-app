@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trash2, MessageSquare, PenTool, Download, ChevronLeft } from 'lucide-react';
+import { Trash2, MessageSquare, PenTool, Download, ChevronLeft, Pencil } from 'lucide-react';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Media } from '@capacitor-community/media';
 import { Capacitor } from '@capacitor/core';
@@ -219,7 +219,7 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
                         textShadow: '0 1px 3px rgba(0,0,0,0.5)'
                     }}
                 >
-                    <PenTool size={20} />
+                    <Pencil size={20} />
                 </button>
                 <div style={{ textAlign: 'center', backdropFilter: 'blur(5px)', padding: '0.2rem 0.5rem', borderRadius: '5px' }}>
                     {currentPhoto.Timestamp ? (
@@ -391,7 +391,7 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
                                 style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}
                             >
                                 <MessageSquare size={24} />
-                                <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>{(currentPhoto.Notes || (currentPhoto.Tags && currentPhoto.Tags.length)) ? 'Edit Details' : 'Add Details'}</span>
+                                <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>Add Note</span>
                             </button>
 
                             {currentPhoto.Source !== 'gallery' && (
