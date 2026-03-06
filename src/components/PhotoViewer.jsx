@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trash2, MessageSquare, PenTool, Download } from 'lucide-react';
+import { Trash2, MessageSquare, PenTool, Download, ChevronLeft } from 'lucide-react';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Media } from '@capacitor-community/media';
 import { Capacitor } from '@capacitor/core';
@@ -185,18 +185,41 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
                     onClick={onClose}
                     style={{
                         position: 'absolute',
-                        left: '1rem',
-                        background: 'rgba(255,255,255,0.2)',
+                        left: '0.75rem',
+                        background: 'transparent',
                         border: 'none',
                         color: 'white',
-                        padding: '0.6rem 1.2rem',
-                        borderRadius: '20px',
-                        fontSize: '1rem',
-                        backdropFilter: 'blur(10px)',
-                        cursor: 'pointer'
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '2px',
+                        padding: '0.5rem 0.25rem',
+                        cursor: 'pointer',
+                        fontSize: '1.1rem',
+                        fontWeight: '500',
+                        textShadow: '0 1px 3px rgba(0,0,0,0.5)'
                     }}
                 >
-                    Close
+                    <ChevronLeft size={28} strokeWidth={2.5} />
+                </button>
+                <button
+                    onClick={() => onAnnotate(currentPhoto)}
+                    style={{
+                        position: 'absolute',
+                        right: '1rem',
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'white',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '0.5rem',
+                        cursor: 'pointer',
+                        fontSize: '0.9rem',
+                        fontWeight: '500',
+                        textShadow: '0 1px 3px rgba(0,0,0,0.5)'
+                    }}
+                >
+                    <PenTool size={20} />
                 </button>
                 <div style={{ textAlign: 'center', backdropFilter: 'blur(5px)', padding: '0.2rem 0.5rem', borderRadius: '5px' }}>
                     {currentPhoto.Timestamp ? (
@@ -369,14 +392,6 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
                             >
                                 <MessageSquare size={24} />
                                 <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>{(currentPhoto.Notes || (currentPhoto.Tags && currentPhoto.Tags.length)) ? 'Edit Details' : 'Add Details'}</span>
-                            </button>
-
-                            <button
-                                onClick={() => onAnnotate(currentPhoto)}
-                                style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}
-                            >
-                                <PenTool size={24} />
-                                <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>Annotate</span>
                             </button>
 
                             {currentPhoto.Source !== 'gallery' && (
