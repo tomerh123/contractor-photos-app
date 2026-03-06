@@ -68,10 +68,12 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
         try {
             if (Capacitor.isNativePlatform()) {
                 // Native: download to temp file, then save
+                alert("1. Starting native save process...");
                 const isDataUrl = currentPhoto.ImageFile.startsWith('data:');
                 let savedFileUri;
 
                 if (isDataUrl) {
+                    alert("2a. Saving cached photo...");
                     const base64Data = currentPhoto.ImageFile.split(',')[1];
                     const fileName = `photo_${Date.now()}.jpg`;
                     const savedFile = await Filesystem.writeFile({
@@ -81,6 +83,7 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
                     });
                     savedFileUri = savedFile.uri;
                 } else {
+                    alert("2b. Downloading photo from cloud...");
                     const fileName = `photo_${Date.now()}.jpg`;
                     const downloadResult = await Filesystem.downloadFile({
                         url: currentPhoto.ImageFile,
@@ -88,9 +91,15 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
                         directory: Directory.Cache
                     });
                     savedFileUri = downloadResult.path;
+                    if (!savedFileUri.startsWith('file://')) {
+                        savedFileUri = 'file://' + savedFileUri;
+                    }
                 }
 
+                alert("3. Downlaod complete. Requesting camera roll permissions...");
                 await Media.requestPermissions();
+
+                alert("4. Saving file to camera roll...");
                 await Media.savePhoto({ path: savedFileUri });
 
                 alert("Photo saved to your camera roll!");
