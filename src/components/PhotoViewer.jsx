@@ -311,19 +311,20 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
             {showUI && (currentPhoto.FolderID || (currentPhoto.Tags && currentPhoto.Tags.length > 0) || currentPhoto.Notes) && (
                 <div style={{
                     position: 'absolute',
-                    bottom: '88px',
+                    bottom: '120px',
                     left: 0,
                     right: 0,
                     zIndex: 49,
                     padding: '0.5rem 1rem',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '0.3rem',
+                    alignItems: 'center',
+                    gap: '0.4rem',
                     opacity: showUI ? 1 : 0,
                     transition: 'opacity 0.2s ease',
                     pointerEvents: 'none',
                 }}>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '0.35rem' }}>
                         {currentPhoto.FolderID && getFolderName && getFolderName(currentPhoto.FolderID) && (
                             <span style={{ backgroundColor: '#0ea5e9', color: 'white', padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 }}>
                                 {getFolderName(currentPhoto.FolderID)}
@@ -336,7 +337,7 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
                         ))}
                     </div>
                     {currentPhoto.Notes && (
-                        <p style={{ margin: 0, color: 'rgba(255,255,255,0.8)', fontSize: '0.8rem', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>{currentPhoto.Notes}</p>
+                        <p style={{ margin: 0, color: 'rgba(255,255,255,0.85)', fontSize: '0.8rem', textAlign: 'center', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>{currentPhoto.Notes}</p>
                     )}
                 </div>
             )}
