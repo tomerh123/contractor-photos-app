@@ -401,12 +401,9 @@ const ProjectList = ({ navigateTo }) => {
                                 projects.map(p => (
                                     <button
                                         key={p.ProjectID}
-                                        onClick={async () => {
+                                        onClick={() => {
                                             setShowShareProjectSelector(false);
-                                            // Pre-fetch share payload directly
-                                            const payloadRaw = await db.generateSharePayload(p.ProjectID);
-                                            const payloadB64 = btoa(encodeURIComponent(JSON.stringify(payloadRaw)));
-                                            navigateTo('SHARED_VIEW', null, payloadB64);
+                                            alert("We are still working on this feature! Check back soon.");
                                         }}
                                         style={{
                                             display: 'flex', alignItems: 'center', textAlign: 'left', padding: '1rem',
