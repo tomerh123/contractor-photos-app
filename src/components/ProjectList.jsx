@@ -182,7 +182,7 @@ const ProjectList = ({ navigateTo }) => {
                 </div>
             </header>
 
-            <div style={{ padding: '0 1.5rem 150px 1.5rem' }}>
+            <div style={{ padding: '0 1.5rem' }}>
                 {/* Greeting */}
                 <h1 style={{ fontSize: '1.8rem', marginBottom: '1rem', textAlign: 'center' }}>Welcome, {currentUser?.Name?.split(' ')[0] || 'Tomer'}</h1>
 
@@ -219,7 +219,7 @@ const ProjectList = ({ navigateTo }) => {
 
                 {/* Quick Links Grid */}
                 <h2 style={{ fontSize: '1.3rem', marginTop: '1.5rem', marginBottom: '1rem' }}>Navigation</h2>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem', marginBottom: '2rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem', paddingBottom: '150px' }}>
                     <div onClick={() => { setIsCreatingFromCamera(false); setShowModal(true); }}>
                         <QuickLink icon={<Plus size={22} />} title="New Project" />
                     </div>
