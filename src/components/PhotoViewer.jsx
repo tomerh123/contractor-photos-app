@@ -208,7 +208,12 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
                                     if (daysDiff < 7) {
                                         return photoDate.toLocaleDateString('en-US', { weekday: 'long' });
                                     } else {
-                                        return photoDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+                                        const isDifferentYear = photoDate.getFullYear() !== new Date().getFullYear();
+                                        return photoDate.toLocaleDateString('en-US', {
+                                            month: 'long',
+                                            day: 'numeric',
+                                            ...(isDifferentYear ? { year: 'numeric' } : {})
+                                        });
                                     }
                                 })()}
                             </div>
