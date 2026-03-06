@@ -202,7 +202,15 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
                     {currentPhoto.Timestamp ? (
                         <>
                             <div style={{ color: 'white', fontWeight: '600', fontSize: '0.95rem', lineHeight: 1.2 }}>
-                                {new Date(currentPhoto.Timestamp).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                                {(() => {
+                                    const photoDate = new Date(currentPhoto.Timestamp);
+                                    const daysDiff = (Date.now() - photoDate.getTime()) / (1000 * 60 * 60 * 24);
+                                    if (daysDiff < 7) {
+                                        return photoDate.toLocaleDateString('en-US', { weekday: 'long' });
+                                    } else {
+                                        return photoDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+                                    }
+                                })()}
                             </div>
                             <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.8rem', marginTop: '2px' }}>
                                 {new Date(currentPhoto.Timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
