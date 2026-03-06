@@ -194,7 +194,8 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo, returnVie
                 UploaderID: currentUser?.uid,
                 Notes: notes,
                 Tags: selectedTags,
-                IsMarkedUp: isCurrentlyMarkedUp
+                IsMarkedUp: isCurrentlyMarkedUp,
+                Source: 'camera'
             };
 
             // Dynamically attach tracking FolderID if the user was standing inside an album when taking the photo

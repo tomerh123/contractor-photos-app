@@ -97,7 +97,8 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, returnView = 'HO
                         ProjectID: projectId,
                         ImageFile: compressedDataUrl,
                         Notes: '',
-                        FolderID: activeFolderId || null
+                        FolderID: activeFolderId || null,
+                        Source: 'gallery'
                     });
 
                     URL.revokeObjectURL(img.src);

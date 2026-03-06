@@ -355,14 +355,16 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
                                 <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>Annotate</span>
                             </button>
 
-                            <button
-                                onClick={handleDownload}
-                                disabled={isDownloading}
-                                style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', opacity: isDownloading ? 0.5 : 1 }}
-                            >
-                                <Download size={24} />
-                                <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>{isDownloading ? 'Saving...' : 'Save'}</span>
-                            </button>
+                            {currentPhoto.Source !== 'gallery' && (
+                                <button
+                                    onClick={handleDownload}
+                                    disabled={isDownloading}
+                                    style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', opacity: isDownloading ? 0.5 : 1 }}
+                                >
+                                    <Download size={24} />
+                                    <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>{isDownloading ? 'Saving...' : 'Save'}</span>
+                                </button>
+                            )}
                         </div>
                     </>
                 )}
