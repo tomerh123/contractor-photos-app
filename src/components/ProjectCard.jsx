@@ -140,8 +140,8 @@ const ProjectCard = ({ project, navigateTo, hideLocation = false }) => {
                     </div>
                 ) : (
                     <>
-                        {/* Favorite Button (Top Left) */}
-                        <div style={{ position: 'absolute', top: '1rem', left: '1rem', zIndex: 10 }}>
+                        {/* Action Buttons (Centered Top) */}
+                        <div style={{ position: 'absolute', top: '1rem', left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: '0.6rem', zIndex: 10 }}>
                             <button
                                 onClick={async (e) => {
                                     e.stopPropagation();
@@ -158,10 +158,6 @@ const ProjectCard = ({ project, navigateTo, hideLocation = false }) => {
                             >
                                 <Star size={16} fill={project.IsFavorite ? "#f59e0b" : "none"} />
                             </button>
-                        </div>
-
-                        {/* Edit and Archive Buttons (Top Right) */}
-                        <div style={{ position: 'absolute', top: '1rem', right: '1rem', display: 'flex', gap: '0.6rem', zIndex: 10 }}>
                             <button
                                 onClick={(e) => { e.stopPropagation(); setIsEditing(true); }}
                                 style={{
