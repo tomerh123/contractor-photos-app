@@ -307,6 +307,40 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
                 )}
             </div>
 
+            {/* Metadata overlay - in the black space below the photo */}
+            {showUI && (currentPhoto.FolderID || (currentPhoto.Tags && currentPhoto.Tags.length > 0) || currentPhoto.Notes) && (
+                <div style={{
+                    position: 'absolute',
+                    bottom: '88px',
+                    left: 0,
+                    right: 0,
+                    zIndex: 49,
+                    padding: '0.5rem 1rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.3rem',
+                    opacity: showUI ? 1 : 0,
+                    transition: 'opacity 0.2s ease',
+                    pointerEvents: 'none',
+                }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                        {currentPhoto.FolderID && getFolderName && getFolderName(currentPhoto.FolderID) && (
+                            <span style={{ backgroundColor: '#0ea5e9', color: 'white', padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 }}>
+                                {getFolderName(currentPhoto.FolderID)}
+                            </span>
+                        )}
+                        {currentPhoto.Tags && currentPhoto.Tags.map(tag => (
+                            <span key={tag} style={{ backgroundColor: 'var(--primary-light)', color: 'var(--primary-color)', padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 }}>
+                                #{tag}
+                            </span>
+                        ))}
+                    </div>
+                    {currentPhoto.Notes && (
+                        <p style={{ margin: 0, color: 'rgba(255,255,255,0.8)', fontSize: '0.8rem', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>{currentPhoto.Notes}</p>
+                    )}
+                </div>
+            )}
+
             {/* Bottom Action Bar */}
             <div style={{
                 position: 'absolute',
@@ -357,55 +391,31 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
                         </div>
                     </div>
                 ) : (
-                    <div style={{ display: 'flex', alignItems: 'center', padding: '0.6rem 1rem', gap: '0.5rem' }}>
-                        {/* Action buttons - left side */}
-                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexShrink: 0 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', padding: '0.5rem 1rem' }}>
+                        <button
+                            onClick={handleDelete}
+                            disabled={isDeleting}
+                            style={{ background: 'transparent', border: 'none', color: '#ef4444', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem', cursor: 'pointer', opacity: isDeleting ? 0.5 : 1, padding: '0.3rem 0.75rem' }}
+                        >
+                            <Trash2 size={22} />
+                            <span style={{ fontSize: '0.7rem', fontWeight: 500 }}>Delete</span>
+                        </button>
+                        <button
+                            onClick={() => setIsEditingNotes(true)}
+                            style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem', cursor: 'pointer', padding: '0.3rem 0.75rem' }}
+                        >
+                            <MessageSquare size={22} />
+                            <span style={{ fontSize: '0.7rem', fontWeight: 500 }}>Add Note</span>
+                        </button>
+                        {currentPhoto.Source !== 'gallery' && (
                             <button
-                                onClick={handleDelete}
-                                disabled={isDeleting}
-                                style={{ background: 'transparent', border: 'none', color: '#ef4444', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem', cursor: 'pointer', opacity: isDeleting ? 0.5 : 1, padding: '0.3rem 0.5rem' }}
+                                onClick={handleDownload}
+                                disabled={isDownloading}
+                                style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem', cursor: 'pointer', opacity: isDownloading ? 0.5 : 1, padding: '0.3rem 0.75rem' }}
                             >
-                                <Trash2 size={22} />
-                                <span style={{ fontSize: '0.7rem', fontWeight: 500 }}>Delete</span>
+                                <Download size={22} />
+                                <span style={{ fontSize: '0.7rem', fontWeight: 500 }}>{isDownloading ? 'Saving...' : 'Save'}</span>
                             </button>
-                            <button
-                                onClick={() => setIsEditingNotes(true)}
-                                style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem', cursor: 'pointer', padding: '0.3rem 0.5rem' }}
-                            >
-                                <MessageSquare size={22} />
-                                <span style={{ fontSize: '0.7rem', fontWeight: 500 }}>Add Note</span>
-                            </button>
-                            {currentPhoto.Source !== 'gallery' && (
-                                <button
-                                    onClick={handleDownload}
-                                    disabled={isDownloading}
-                                    style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem', cursor: 'pointer', opacity: isDownloading ? 0.5 : 1, padding: '0.3rem 0.5rem' }}
-                                >
-                                    <Download size={22} />
-                                    <span style={{ fontSize: '0.7rem', fontWeight: 500 }}>{isDownloading ? 'Saving...' : 'Save'}</span>
-                                </button>
-                            )}
-                        </div>
-
-                        {/* Tags + notes - right side, stacked vertically */}
-                        {(currentPhoto.FolderID || (currentPhoto.Tags && currentPhoto.Tags.length > 0) || currentPhoto.Notes) && (
-                            <div style={{ flex: 1, borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.3rem', overflow: 'hidden' }}>
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
-                                    {currentPhoto.FolderID && getFolderName && getFolderName(currentPhoto.FolderID) && (
-                                        <span style={{ backgroundColor: '#0ea5e9', color: 'white', padding: '0.15rem 0.5rem', borderRadius: '10px', fontSize: '0.7rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                                            {getFolderName(currentPhoto.FolderID)}
-                                        </span>
-                                    )}
-                                    {currentPhoto.Tags && currentPhoto.Tags.map(tag => (
-                                        <span key={tag} style={{ backgroundColor: 'var(--primary-light)', color: 'var(--primary-color)', padding: '0.15rem 0.5rem', borderRadius: '10px', fontSize: '0.7rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                                            #{tag}
-                                        </span>
-                                    ))}
-                                </div>
-                                {currentPhoto.Notes && (
-                                    <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.75rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{currentPhoto.Notes}</p>
-                                )}
-                            </div>
                         )}
                     </div>
                 )}
