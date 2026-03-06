@@ -186,7 +186,39 @@ const ProjectList = ({ navigateTo }) => {
                 {/* Greeting */}
                 <h1 style={{ fontSize: '1.8rem', marginBottom: '1rem', textAlign: 'center' }}>Welcome, {currentUser?.Name?.split(' ')[0] || 'Tomer'}</h1>
 
+                {/* Workspace Section (Elevated to Top) */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '1rem', marginBottom: '1rem' }}>
+                    <h2 style={{ fontSize: '1.4rem' }}>Recent Projects</h2>
+                    <span onClick={() => navigateTo('ALL_PROJECTS')} style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 600, cursor: 'pointer' }}>View All</span>
+                </div>
+
+                {/* Projects Carousel Feed */}
+                {loading ? (
+                    <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading projects...</div>
+                ) : displayedProjects.length === 0 ? (
+                    <div style={{ padding: '0 2rem', textAlign: 'center', color: 'var(--text-secondary)', backgroundColor: 'var(--surface)', borderRadius: '24px', height: '240px', marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px dashed var(--border)' }}>
+                        No active projects. Tap the + to create one.
+                    </div>
+                ) : (
+                    <div className="hide-scrollbar" style={{
+                        display: 'flex',
+                        gap: '1rem',
+                        overflowX: 'auto',
+                        paddingBottom: '1.5rem',
+                        margin: '0 -1.5rem',
+                        paddingLeft: '1.5rem',
+                        paddingRight: '1.5rem'
+                    }}>
+                        {displayedProjects.slice(0, 5).map(project => (
+                            <div key={project.ProjectID} style={{ width: '85%', maxWidth: '320px', flex: 'none', scrollSnapAlign: 'start' }}>
+                                <ProjectCard project={project} navigateTo={navigateTo} />
+                            </div>
+                        ))}
+                    </div>
+                )}
+
                 {/* Quick Links Grid */}
+                <h2 style={{ fontSize: '1.3rem', marginTop: '1rem', marginBottom: '1rem' }}>Navigation</h2>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem', marginBottom: '2rem' }}>
                     <div onClick={() => navigateTo('ALL_PROJECTS')}><QuickLink icon={<Folder size={22} />} title="All Projects" /></div>
                     <div onClick={() => navigateTo('RECENT_PHOTOS')}><QuickLink icon={<ImageIcon size={22} />} title="Photos" /></div>
@@ -215,51 +247,6 @@ const ProjectList = ({ navigateTo }) => {
                         <p style={{ textAlign: 'center', marginTop: '0.6rem', fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)' }}>New Project</p>
                     </div>
                 </div>
-
-                {/* Workspace Section */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '1rem', marginBottom: '1rem' }}>
-                    <h2 style={{ fontSize: '1.4rem' }}>Projects</h2>
-                    <span onClick={() => navigateTo('ALL_PROJECTS')} style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 600, cursor: 'pointer' }}>View All</span>
-                </div>
-
-                {/* Tabs */}
-                <div style={{ display: 'flex', gap: '1.5rem', borderBottom: '1px solid var(--border)', marginBottom: '1.2rem' }}>
-                    <div onClick={() => setActiveTab('Active')} style={{ cursor: 'pointer', paddingBottom: '0.6rem', borderBottom: activeTab === 'Active' ? '2px solid var(--primary-color)' : '2px solid transparent', fontWeight: 600, color: activeTab === 'Active' ? 'var(--text-primary)' : 'var(--text-secondary)' }}>Active</div>
-                    <div onClick={() => setActiveTab('Archived')} style={{ cursor: 'pointer', paddingBottom: '0.6rem', borderBottom: activeTab === 'Archived' ? '2px solid var(--primary-color)' : '2px solid transparent', color: activeTab === 'Archived' ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: 600 }}>Archived</div>
-                </div>
-
-                {/* Filter Pills */}
-                <div className="hide-scrollbar" style={{
-                    display: 'flex',
-                    gap: '0.6rem',
-                    overflowX: 'auto',
-                    paddingBottom: '1.5rem',
-                    margin: '0 -1.5rem',
-                    paddingLeft: '1.5rem',
-                    opacity: activeTab === 'Active' ? 1 : 0,
-                    pointerEvents: activeTab === 'Active' ? 'auto' : 'none',
-                    transition: 'opacity 0.2s ease'
-                }}>
-                    <div onClick={() => setActiveFilter('Recent')} style={{ cursor: 'pointer', background: activeFilter === 'Recent' ? 'var(--surface-hover)' : 'var(--surface)', border: activeFilter === 'Recent' ? '1px solid var(--border-light)' : '1px solid var(--border)', padding: '0.5rem 1.2rem', borderRadius: '100px', fontSize: '0.9rem', fontWeight: 600, color: activeFilter === 'Recent' ? 'var(--text-primary)' : 'var(--text-secondary)', whiteSpace: 'nowrap', transition: 'background 0.2s, border 0.2s, color 0.2s' }}>Recent</div>
-                    <div onClick={() => setActiveFilter('Favorites')} style={{ cursor: 'pointer', background: activeFilter === 'Favorites' ? 'var(--surface-hover)' : 'var(--surface)', border: activeFilter === 'Favorites' ? '1px solid var(--border-light)' : '1px solid var(--border)', padding: '0.5rem 1.2rem', borderRadius: '100px', fontSize: '0.9rem', fontWeight: 600, color: activeFilter === 'Favorites' ? 'var(--text-primary)' : 'var(--text-secondary)', whiteSpace: 'nowrap', transition: 'background 0.2s, border 0.2s, color 0.2s' }}>Favorites</div>
-                </div>
-
-                {/* Projects Feed */}
-                {loading ? (
-                    <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading projects...</div>
-                ) : displayedProjects.length === 0 ? (
-                    <div style={{ padding: '0 2rem', textAlign: 'center', color: 'var(--text-secondary)', backgroundColor: 'var(--surface)', borderRadius: '24px', height: '240px', marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px dashed var(--border)' }}>
-                        {activeTab === 'Archived' ? 'Your archive is empty. Deleted projects stay here for 30 days.' :
-                            activeFilter === 'Favorites' ? 'No favorite projects yet. Star a project to see it here.' :
-                                'No active projects. Tap the + to create one.'}
-                    </div>
-                ) : (
-                    <div>
-                        {displayedProjects.map(project => (
-                            <ProjectCard key={project.ProjectID} project={project} navigateTo={navigateTo} />
-                        ))}
-                    </div>
-                )}
             </div>
 
             {/* Floating Action Dock */}

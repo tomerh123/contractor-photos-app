@@ -11,13 +11,21 @@ const AllProjectsView = ({ navigateTo }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [sortOrder, setSortOrder] = useState('newest');
 
+    const [activeTab, setActiveTab] = useState('Active'); // 'Active' or 'Archived'
+
     useEffect(() => {
         const sortProjects = async () => {
             setIsLoading(true);
 
-            // Map through each project and figure out its last modified date
-            const activeProjects = projects.filter(p => !p.ArchivedAt);
-            const projectsWithDates = await Promise.all(activeProjects.map(async (project) => {
+            // Filter by active/archived tab
+            let tabProjects = projects;
+            if (activeTab === 'Active') {
+                tabProjects = projects.filter(p => !p.ArchivedAt);
+            } else {
+                tabProjects = projects.filter(p => p.ArchivedAt);
+            }
+
+            const projectsWithDates = await Promise.all(tabProjects.map(async (project) => {
                 const photos = await db.getPhotosForProject(project.ProjectID);
                 let lastModified = new Date(project.CreatedAt);
 
@@ -47,7 +55,7 @@ const AllProjectsView = ({ navigateTo }) => {
         };
 
         sortProjects();
-    }, [projects, sortOrder]);
+    }, [projects, sortOrder, activeTab]);
 
     const displayedProjects = sortedProjects.filter(p => {
         if (searchQuery.trim()) {
@@ -114,6 +122,12 @@ const AllProjectsView = ({ navigateTo }) => {
                             outline: 'none'
                         }}
                     />
+                </div>
+
+                {/* Tabs */}
+                <div style={{ display: 'flex', gap: '1.5rem', borderBottom: '1px solid var(--border)', marginTop: '1.5rem' }}>
+                    <div onClick={() => setActiveTab('Active')} style={{ cursor: 'pointer', paddingBottom: '0.6rem', borderBottom: activeTab === 'Active' ? '2px solid var(--primary-color)' : '2px solid transparent', fontWeight: 600, color: activeTab === 'Active' ? 'var(--text-primary)' : 'var(--text-secondary)' }}>Active</div>
+                    <div onClick={() => setActiveTab('Archived')} style={{ cursor: 'pointer', paddingBottom: '0.6rem', borderBottom: activeTab === 'Archived' ? '2px solid var(--primary-color)' : '2px solid transparent', color: activeTab === 'Archived' ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: 600 }}>Archived</div>
                 </div>
             </div>
 
