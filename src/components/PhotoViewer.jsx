@@ -124,7 +124,7 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
             }
         } catch (err) {
             console.error("Error saving photo:", err);
-            alert("Failed to save photo.");
+            alert("Failed to save photo: " + (err?.message || err?.toString() || "Unknown error"));
         } finally {
             setIsDownloading(false);
         }
