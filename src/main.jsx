@@ -4,6 +4,7 @@ import App from './App.jsx'
 import './index.css'
 
 // Register Service Worker for PWA
+/*
 import { registerSW } from 'virtual:pwa-register'
 const updateSW = registerSW({
     onNeedRefresh() {
@@ -12,6 +13,7 @@ const updateSW = registerSW({
     },
     immediate: true
 })
+*/
 
 ReactDOM.createRoot(document.getElementById('root')).render(
     <React.StrictMode>
