@@ -292,7 +292,7 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, returnView = 'HO
                 onChange={handleImportPhoto}
             />
 
-            <header className="header" style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '64px' }}>
+            <header className="header" style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <button className="btn" onClick={() => activeFolderId ? setActiveFolderId(null) : navigateTo(returnView)} style={{ position: 'absolute', left: '1.5rem', top: '50%', transform: 'translateY(-50%)', padding: '0.5rem', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <ArrowLeft size={20} />
                 </button>

@@ -225,7 +225,6 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo, returnVie
                 display: 'flex',
                 flexDirection: 'column',
                 backgroundColor: 'var(--background)',
-                paddingTop: 'env(safe-area-inset-top)',
                 paddingBottom: 'env(safe-area-inset-bottom)',
                 opacity: isCanvasReady ? 1 : 0,
                 transition: 'opacity 0.2s ease-out'

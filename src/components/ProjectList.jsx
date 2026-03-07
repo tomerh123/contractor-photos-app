@@ -185,8 +185,7 @@ const ProjectList = ({ navigateTo }) => {
 
             <div style={{ padding: '0 1.5rem' }}>
                 {/* Greeting */}
-                <h1 style={{ fontSize: '1.8rem', marginBottom: '0.2rem', textAlign: 'center' }}>Welcome, {currentUser?.Name?.split(' ')[0] || 'Tomer'}</h1>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', textAlign: 'center', marginBottom: '0.8rem', opacity: 0.5 }}>v1.0.1-animated</div>
+                <h1 style={{ fontSize: '1.8rem', marginBottom: '1rem', textAlign: 'center' }}>Welcome, {currentUser?.Name?.split(' ')[0] || 'Tomer'}</h1>
 
                 {/* Workspace Section (Elevated to Top) */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem', marginBottom: '1rem' }}>
