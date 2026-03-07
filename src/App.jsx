@@ -130,8 +130,8 @@ function MainRoutes() {
                     animate="center"
                     exit="exit"
                     transition={{
-                        x: { type: "spring", stiffness: 300, damping: 32 },
-                        opacity: { duration: 0.2 }
+                        x: { type: "spring", stiffness: 450, damping: 45, restDelta: 0.01 },
+                        opacity: { duration: 0.25, ease: "easeInOut" }
                     }}
                     style={{
                         position: 'absolute',
@@ -141,7 +141,8 @@ function MainRoutes() {
                         bottom: 0,
                         backgroundColor: 'var(--background)',
                         overflowY: 'auto',
-                        WebkitOverflowScrolling: 'touch'
+                        WebkitOverflowScrolling: 'touch',
+                        willChange: 'transform, opacity'
                     }}
                 >
                     {underlyingView === 'HOME' && <ProjectList navigateTo={navigateTo} />}

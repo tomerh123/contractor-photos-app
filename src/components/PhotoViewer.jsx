@@ -178,7 +178,7 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
             initial={disableAnimation ? false : { y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            transition={{ type: "spring", stiffness: 450, damping: 45, restDelta: 0.01 }}
             style={{
                 position: 'fixed',
                 top: 0,
@@ -189,7 +189,8 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
                 zIndex: 2000,
                 display: 'flex',
                 flexDirection: 'column',
-                touchAction: 'none'
+                touchAction: 'none',
+                willChange: 'transform'
             }}
         >
             {/* Header Controls */}

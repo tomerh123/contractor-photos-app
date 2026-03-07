@@ -53,12 +53,13 @@ const CameraView = ({ projectId, navigateTo, returnView = 'HOME' }) => {
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            transition={{ type: "spring", stiffness: 450, damping: 45, restDelta: 0.01 }}
             style={{
                 position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
                 backgroundColor: 'var(--background)', zIndex: 1000,
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                padding: '2rem', textAlign: 'center'
+                padding: '2rem', textAlign: 'center',
+                willChange: 'transform'
             }}
         >
             {error ? (

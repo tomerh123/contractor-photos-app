@@ -214,7 +214,7 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo, returnVie
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            transition={{ type: "spring", stiffness: 450, damping: 45, restDelta: 0.01 }}
             style={{
                 position: 'fixed',
                 top: 0,
@@ -227,7 +227,8 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo, returnVie
                 backgroundColor: 'var(--background)',
                 paddingBottom: 'env(safe-area-inset-bottom)',
                 opacity: isCanvasReady ? 1 : 0,
-                transition: 'opacity 0.2s ease-out'
+                transition: 'opacity 0.2s ease-out',
+                willChange: 'transform'
             }}>
             <header className="header" style={{ justifyContent: 'center' }}>
                 <h2 style={{ margin: 0, fontSize: '1.2rem' }}>Markup Photo</h2>
