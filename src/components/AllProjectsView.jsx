@@ -15,49 +15,23 @@ const AllProjectsView = ({ navigateTo }) => {
     const [activeTab, setActiveTab] = useState('Active'); // 'Active', 'Favorites', or 'Archived'
 
     useEffect(() => {
-        const sortProjects = async () => {
-            if (sortedProjects.length === 0) setIsLoading(true);
+        let tabProjects = projects;
+        if (activeTab === 'Active') {
+            tabProjects = projects.filter(p => !p.ArchivedAt);
+        } else if (activeTab === 'Favorites') {
+            tabProjects = projects.filter(p => p.IsFavorite && !p.ArchivedAt);
+        } else {
+            tabProjects = projects.filter(p => p.ArchivedAt);
+        }
 
-            // Filter by active/archived tab
-            let tabProjects = projects;
-            if (activeTab === 'Active') {
-                tabProjects = projects.filter(p => !p.ArchivedAt);
-            } else if (activeTab === 'Favorites') {
-                tabProjects = projects.filter(p => p.IsFavorite && !p.ArchivedAt);
-            } else {
-                tabProjects = projects.filter(p => p.ArchivedAt);
-            }
+        const sorted = [...tabProjects].sort((a, b) => {
+            const tA = new Date(a.CreatedAt).getTime();
+            const tB = new Date(b.CreatedAt).getTime();
+            return sortOrder === 'newest' ? tB - tA : tA - tB;
+        });
 
-            const projectsWithDates = await Promise.all(tabProjects.map(async (project) => {
-                const photos = await db.getPhotosForProject(project.ProjectID);
-                let lastModified = new Date(project.CreatedAt);
-
-                if (photos && photos.length > 0) {
-                    // Find the most recent photo
-                    photos.sort((a, b) => new Date(b.Timestamp) - new Date(a.Timestamp));
-                    const latestPhotoDate = new Date(photos[0].Timestamp);
-
-                    // If the photo was added after creation, use that date
-                    if (latestPhotoDate > lastModified) {
-                        lastModified = latestPhotoDate;
-                    }
-                }
-
-                return { ...project, lastModifiedTime: lastModified.getTime() };
-            }));
-
-            // Sort by most recently modified based on sortOrder
-            projectsWithDates.sort((a, b) => {
-                return sortOrder === 'newest'
-                    ? a.lastModifiedTime - b.lastModifiedTime
-                    : b.lastModifiedTime - a.lastModifiedTime;
-            });
-
-            setSortedProjects(projectsWithDates);
-            setIsLoading(false);
-        };
-
-        sortProjects();
+        setSortedProjects(sorted);
+        setIsLoading(false);
     }, [projects, sortOrder, activeTab]);
 
     const displayedProjects = sortedProjects.filter(p => {

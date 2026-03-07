@@ -141,7 +141,7 @@ const ProjectCard = ({ project, navigateTo, hideLocation = false }) => {
                 ) : (
                     <>
                         {/* Action Buttons (Centered Top) */}
-                        <div style={{ position: 'absolute', top: '1rem', left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: '0.6rem', zIndex: 10 }}>
+                        <div style={{ position: 'absolute', top: '1rem', left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: '1.4rem', zIndex: 10 }}>
                             <button
                                 onClick={async (e) => {
                                     e.stopPropagation();

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Camera as CameraIcon } from 'lucide-react';
 
@@ -48,12 +49,18 @@ const CameraView = ({ projectId, navigateTo, returnView = 'HOME' }) => {
     }, [projectId, navigateTo]);
 
     return (
-        <div style={{
-            position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-            backgroundColor: 'var(--background)', zIndex: 1000,
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            padding: '2rem', textAlign: 'center'
-        }}>
+        <motion.div
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            style={{
+                position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+                backgroundColor: 'var(--background)', zIndex: 1000,
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                padding: '2rem', textAlign: 'center'
+            }}
+        >
             {error ? (
                 <>
                     <h2 style={{ color: 'var(--danger)', marginBottom: '1rem' }}>Hardware Stream Blocked</h2>
@@ -75,7 +82,7 @@ const CameraView = ({ projectId, navigateTo, returnView = 'HOME' }) => {
                     <p style={{ color: 'var(--text-secondary)' }}>Waiting for secure Apple Sandbox bridge.</p>
                 </>
             )}
-        </div>
+        </motion.div>
     );
 };
 

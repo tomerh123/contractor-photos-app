@@ -190,7 +190,7 @@ const ProjectList = ({ navigateTo }) => {
                 {/* Workspace Section (Elevated to Top) */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem', marginBottom: '1rem' }}>
                     <h2 style={{ fontSize: '1.4rem', margin: 0 }}>Recent Projects</h2>
-                    <span onClick={() => navigateTo('ALL_PROJECTS')} style={{ fontSize: '0.95rem', color: 'var(--primary-color)', backgroundColor: 'var(--surface)', padding: '6px 14px', borderRadius: '20px', fontWeight: 600, cursor: 'pointer', border: '1px solid var(--border)' }}>View All</span>
+                    <span onClick={() => navigateTo('ALL_PROJECTS')} style={{ fontSize: '0.95rem', color: 'var(--primary-color)', backgroundColor: 'var(--surface)', padding: '6px 14px', borderRadius: '20px', fontWeight: 600, cursor: 'pointer', border: '1px solid var(--border)' }}>View All ({projects.filter(p => !p.ArchivedAt).length})</span>
                 </div>
 
                 {/* Projects Carousel Feed */}
@@ -210,7 +210,7 @@ const ProjectList = ({ navigateTo }) => {
                         paddingLeft: '1.5rem',
                         paddingRight: '1.5rem'
                     }}>
-                        {displayedProjects.slice(0, 5).map(project => (
+                        {displayedProjects.slice(0, 2).map(project => (
                             <div key={project.ProjectID} style={{ width: 'calc(50vw - 2rem)', minWidth: '160px', flex: 'none', scrollSnapAlign: 'start' }}>
                                 <ProjectCard project={project} navigateTo={navigateTo} hideLocation={true} />
                             </div>

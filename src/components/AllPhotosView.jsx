@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import * as db from '../db';
 import PhotoViewer from './PhotoViewer';
 import { ArrowLeft, ArrowUp, ArrowDown, ChevronDown, Check } from 'lucide-react';
@@ -257,33 +258,35 @@ const AllPhotosView = ({ navigateTo, initialPhotoId }) => {
                 )}
             </div>
 
-            {selectedPhoto && (
-                <PhotoViewer
-                    photos={photos}
-                    initialIndex={photos.findIndex(p => p.PhotoID === selectedPhoto.PhotoID)}
-                    disableAnimation={selectedPhoto.PhotoID === initialPhotoId}
-                    onClose={() => setSelectedPhoto(null)}
-                    onAnnotate={(photo) => {
-                        // DO NOT close viewer! Keep it mounted behind the Markup overlay!
-                        navigateTo('MARKUP', photo.ProjectID, photo.ImageFile, photo.PhotoID);
-                    }}
-                    onUpdateNotes={async (photoId, newNotes, newTags) => {
-                        await db.updatePhotoDetails(photoId, newNotes, newTags);
-                        const newPhotos = await db.getAllPhotos();
-                        setPhotos(sortPhotos(newPhotos));
-                        if (selectedPhoto.PhotoID === photoId) {
-                            setSelectedPhoto(newPhotos.find(p => p.PhotoID === photoId));
-                        }
-                    }}
-                    onDelete={async (photoId) => {
-                        await db.deletePhoto(photoId);
-                        const newPhotos = await db.getAllPhotos();
-                        const sorted = sortPhotos(newPhotos);
-                        setPhotos(sorted);
-                        if (sorted.length === 0) setSelectedPhoto(null);
-                    }}
-                />
-            )}
+            <AnimatePresence>
+                {selectedPhoto && (
+                    <PhotoViewer
+                        photos={photos}
+                        initialIndex={photos.findIndex(p => p.PhotoID === selectedPhoto.PhotoID)}
+                        disableAnimation={selectedPhoto.PhotoID === initialPhotoId}
+                        onClose={() => setSelectedPhoto(null)}
+                        onAnnotate={(photo) => {
+                            // DO NOT close viewer! Keep it mounted behind the Markup overlay!
+                            navigateTo('MARKUP', photo.ProjectID, photo.ImageFile, photo.PhotoID);
+                        }}
+                        onUpdateNotes={async (photoId, newNotes, newTags) => {
+                            await db.updatePhotoDetails(photoId, newNotes, newTags);
+                            const newPhotos = await db.getAllPhotos();
+                            setPhotos(sortPhotos(newPhotos));
+                            if (selectedPhoto.PhotoID === photoId) {
+                                setSelectedPhoto(newPhotos.find(p => p.PhotoID === photoId));
+                            }
+                        }}
+                        onDelete={async (photoId) => {
+                            await db.deletePhoto(photoId);
+                            const newPhotos = await db.getAllPhotos();
+                            const sorted = sortPhotos(newPhotos);
+                            setPhotos(sorted);
+                            if (sorted.length === 0) setSelectedPhoto(null);
+                        }}
+                    />
+                )}
+            </AnimatePresence>
         </div>
     );
 };

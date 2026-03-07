@@ -1,13 +1,44 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Trash2, MessageSquare, PenTool, Download, ChevronLeft, Pencil } from 'lucide-react';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Media } from '@capacitor-community/media';
 import { Capacitor } from '@capacitor/core';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Zoom } from 'swiper/modules';
 import 'swiper/css';
-import 'swiper/css/zoom';
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import TagSelector from './TagSelector';
+
+const ZoomableSlide = ({ photo, index, swiperRef }) => {
+    const [scale, setScale] = useState(1);
+
+    return (
+        <TransformWrapper
+            minScale={1}
+            maxScale={5}
+            initialScale={1}
+            doubleClick={{ mode: "toggle", step: 4 }}
+            panning={{ disabled: scale <= 1 }}
+            onTransformed={(ref) => {
+                setScale(ref.state.scale);
+                if (swiperRef && ref.state.scale > 1) {
+                    swiperRef.allowTouchMove = false;
+                } else if (swiperRef) {
+                    swiperRef.allowTouchMove = true;
+                }
+            }}
+        >
+            <TransformComponent wrapperStyle={{ width: '100%', height: '100%' }} contentStyle={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <img
+                    src={photo.ImageFile}
+                    alt={`Project Photo ${index + 1}`}
+                    draggable={false}
+                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                />
+            </TransformComponent>
+        </TransformWrapper>
+    );
+};
 
 const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes, onDelete, disableAnimation = false, getFolderName }) => {
     const [currentIndex, setCurrentIndex] = useState(initialIndex || 0);
@@ -19,7 +50,6 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
     const [isDeleting, setIsDeleting] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
-
     // Swiper ref for manual navigation
     const [swiperRef, setSwiperRef] = useState(null);
 
@@ -139,18 +169,16 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
         }
     };
 
-    const confirmDelete = async () => {
-        setIsDeleting(true);
-        await onDelete(currentPhoto.PhotoID);
-        setIsDeleting(false);
-        setShowDeleteModal(false);
-        if (currentIndex >= photos.length - 1 && currentIndex > 0) {
-            setCurrentIndex(currentIndex - 1);
-        }
+    const handleClose = () => {
+        onClose();
     };
 
     return (
-        <div
+        <motion.div
+            initial={disableAnimation ? false : { y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
             style={{
                 position: 'fixed',
                 top: 0,
@@ -161,8 +189,6 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
                 zIndex: 2000,
                 display: 'flex',
                 flexDirection: 'column',
-                animation: disableAnimation ? 'none' : 'slideUp 0.15s ease-out',
-                transition: 'background-color 0.3s ease',
                 touchAction: 'none'
             }}
         >
@@ -186,7 +212,7 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
                 pointerEvents: showUI ? 'auto' : 'none',
             }}>
                 <button
-                    onClick={onClose}
+                    onClick={handleClose}
                     style={{
                         position: 'absolute',
                         left: '0.75rem',
@@ -231,11 +257,19 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
                             <div style={{ color: 'white', fontWeight: '600', fontSize: '0.95rem', lineHeight: 1.2 }}>
                                 {(() => {
                                     const photoDate = new Date(currentPhoto.Timestamp);
-                                    const daysDiff = (Date.now() - photoDate.getTime()) / (1000 * 60 * 60 * 24);
-                                    if (daysDiff < 7) {
+                                    const now = new Date();
+                                    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                                    const yesterdayStart = new Date(todayStart);
+                                    yesterdayStart.setDate(todayStart.getDate() - 1);
+                                    const daysDiff = (now.getTime() - photoDate.getTime()) / (1000 * 60 * 60 * 24);
+                                    if (photoDate >= todayStart) {
+                                        return 'Today';
+                                    } else if (photoDate >= yesterdayStart) {
+                                        return 'Yesterday';
+                                    } else if (daysDiff < 7) {
                                         return photoDate.toLocaleDateString('en-US', { weekday: 'long' });
                                     } else {
-                                        const isDifferentYear = photoDate.getFullYear() !== new Date().getFullYear();
+                                        const isDifferentYear = photoDate.getFullYear() !== now.getFullYear();
                                         return photoDate.toLocaleDateString('en-US', {
                                             month: 'long',
                                             day: 'numeric',
@@ -244,12 +278,34 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
                                     }
                                 })()}
                             </div>
-                            <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.8rem', marginTop: '2px' }}>
-                                {new Date(currentPhoto.Timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                            <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.8rem', marginTop: '2px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                <span>{new Date(currentPhoto.Timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}</span>
+                                {currentPhoto.EditedAt && (() => {
+                                    const editDate = new Date(currentPhoto.EditedAt);
+                                    const now = new Date();
+                                    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                                    const yesterdayStart = new Date(todayStart);
+                                    yesterdayStart.setDate(todayStart.getDate() - 1);
+                                    let dateLabel;
+                                    if (editDate >= todayStart) dateLabel = 'Today';
+                                    else if (editDate >= yesterdayStart) dateLabel = 'Yesterday';
+                                    else dateLabel = editDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                                    return (
+                                        <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)' }}>
+                                            Edited {dateLabel} at {editDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                                        </span>
+                                    );
+                                })()}
                             </div>
                         </>
                     ) : (
-                        <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem' }}>No date</div>
+                        <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem' }}>
+                            {currentPhoto.EditedAt ? (
+                                <span>Edited {new Date(currentPhoto.EditedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                            ) : (
+                                "No date"
+                            )}
+                        </div>
                     )}
                 </div>
             </header>
@@ -259,13 +315,14 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
                 onClick={toggleUI}
                 style={{
                     position: 'absolute',
-                    top: '140px',
+                    top: isEditingNotes ? '60px' : '140px',
                     left: 0,
                     right: 0,
-                    bottom: '180px',
+                    bottom: isEditingNotes ? '260px' : '180px',
                     overflow: 'hidden',
                     display: 'flex',
                     alignItems: 'center',
+                    transition: 'top 0.3s ease, bottom 0.3s ease',
                 }}
             >
                 {/* Desktop Prev Button */}
@@ -278,8 +335,7 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
                 )}
 
                 <Swiper
-                    modules={[Zoom]}
-                    zoom={{ maxRatio: 5, minRatio: 1 }}
+                    modules={[]} // Removed Zoom module
                     initialSlide={initialIndex}
                     onSwiper={setSwiperRef}
                     onSlideChange={(swiper) => setCurrentIndex(swiper.activeIndex)}
@@ -287,13 +343,7 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
                 >
                     {photos.map((photo, index) => (
                         <SwiperSlide key={photo.PhotoID}>
-                            <div className="swiper-zoom-container">
-                                <img
-                                    src={photo.ImageFile}
-                                    alt={`Project Photo ${index + 1}`}
-                                    draggable={false}
-                                />
-                            </div>
+                            <ZoomableSlide photo={photo} index={index} swiperRef={swiperRef} />
                         </SwiperSlide>
                     ))}
                 </Swiper>
@@ -349,8 +399,8 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
                 left: 0,
                 right: 0,
                 zIndex: 50,
-                maxHeight: '45%',
-                overflowY: 'auto',
+                maxHeight: isEditingNotes ? '80%' : '45%',
+                overflowY: isEditingNotes ? 'visible' : 'auto',
                 backgroundColor: 'rgba(20, 20, 20, 0.85)',
                 color: 'var(--text-primary)',
                 borderTop: '1px solid rgba(255,255,255,0.1)',
@@ -466,7 +516,7 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
                     </div>
                 </div>
             )}
-        </div>
+        </motion.div>
     );
 };
 

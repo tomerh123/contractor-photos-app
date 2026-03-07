@@ -1,0 +1,12 @@
+{
+  "appId": "com.contractorphotos.app",
+  "appName": "TrueSite",
+  "webDir": "dist",
+  "server": {
+    "url": "https://tomerh123.github.io/contractor-photos-app",
+    "cleartext": false
+  },
+  "ios": {
+    "orientation": "portrait"
+  }
+}

@@ -9,10 +9,18 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="TrueSite" />
-  <link rel="icon" href="./icon.png" />
-  <link rel="apple-touch-icon" href="./icon.png" />
-  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" href="/contractor-photos-app/icon.png" />
+  <link rel="apple-touch-icon" href="/contractor-photos-app/icon.png" />
+  <link rel="manifest" href="/contractor-photos-app/manifest.json" />
   <title>TrueSite</title>
+  <script>
+    // Unregister any service workers so Capacitor always fetches fresh code from GitHub Pages.
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function (registrations) {
+        for (var r of registrations) { r.unregister(); }
+      });
+    }
+  </script>
   <script>
     window.onerror = function (message, source, lineno, colno, error) {
       const errDiv = document.createElement('div');
@@ -27,8 +35,8 @@
       document.body.appendChild(errDiv);
     });
   </script>
-  <script type="module" crossorigin src="./assets/index-CDuzo8ij.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-Bk93lewp.css">
+  <script type="module" crossorigin src="/contractor-photos-app/assets/index-C4BhBqlG.js"></script>
+  <link rel="stylesheet" crossorigin href="/contractor-photos-app/assets/index-Cx_vQjTh.css">
 </head>
 
 <body>

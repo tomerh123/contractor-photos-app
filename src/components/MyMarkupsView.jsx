@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import * as db from '../db';
 import PhotoViewer from './PhotoViewer';
 import { ArrowLeft, ArrowUp, ArrowDown } from 'lucide-react';
@@ -172,34 +173,36 @@ const MyMarkupsView = ({ navigateTo, initialPhotoId }) => {
                 )}
             </div>
 
-            {selectedPhoto && (
-                <PhotoViewer
-                    photos={photos}
-                    initialIndex={photos.findIndex(p => p.PhotoID === selectedPhoto.PhotoID)}
-                    onClose={() => setSelectedPhoto(null)}
-                    onAnnotate={(photo) => {
-                        setSelectedPhoto(null);
-                        navigateTo('MARKUP', photo.ProjectID, photo.ImageFile, photo.PhotoID);
-                    }}
-                    onUpdateNotes={async (photoId, newNotes, newTags) => {
-                        await db.updatePhotoDetails(photoId, newNotes, newTags);
-                        const newPhotos = await db.getAllPhotos();
-                        const markedUpPhotos = newPhotos.filter(p => p.IsMarkedUp === true);
-                        setPhotos(sortPhotos(markedUpPhotos));
-                        if (selectedPhoto.PhotoID === photoId) {
-                            setSelectedPhoto(newPhotos.find(p => p.PhotoID === photoId));
-                        }
-                    }}
-                    onDelete={async (photoId) => {
-                        await db.deletePhoto(photoId);
-                        const newPhotos = await db.getAllPhotos();
-                        const markedUpPhotos = newPhotos.filter(p => p.IsMarkedUp === true);
-                        const sorted = sortPhotos(markedUpPhotos);
-                        setPhotos(sorted);
-                        if (sorted.length === 0) setSelectedPhoto(null);
-                    }}
-                />
-            )}
+            <AnimatePresence>
+                {selectedPhoto && (
+                    <PhotoViewer
+                        photos={photos}
+                        initialIndex={photos.findIndex(p => p.PhotoID === selectedPhoto.PhotoID)}
+                        onClose={() => setSelectedPhoto(null)}
+                        onAnnotate={(photo) => {
+                            setSelectedPhoto(null);
+                            navigateTo('MARKUP', photo.ProjectID, photo.ImageFile, photo.PhotoID);
+                        }}
+                        onUpdateNotes={async (photoId, newNotes, newTags) => {
+                            await db.updatePhotoDetails(photoId, newNotes, newTags);
+                            const newPhotos = await db.getAllPhotos();
+                            const markedUpPhotos = newPhotos.filter(p => p.IsMarkedUp === true);
+                            setPhotos(sortPhotos(markedUpPhotos));
+                            if (selectedPhoto.PhotoID === photoId) {
+                                setSelectedPhoto(newPhotos.find(p => p.PhotoID === photoId));
+                            }
+                        }}
+                        onDelete={async (photoId) => {
+                            await db.deletePhoto(photoId);
+                            const newPhotos = await db.getAllPhotos();
+                            const markedUpPhotos = newPhotos.filter(p => p.IsMarkedUp === true);
+                            const sorted = sortPhotos(markedUpPhotos);
+                            setPhotos(sorted);
+                            if (sorted.length === 0) setSelectedPhoto(null);
+                        }}
+                    />
+                )}
+            </AnimatePresence>
         </div>
     );
 };

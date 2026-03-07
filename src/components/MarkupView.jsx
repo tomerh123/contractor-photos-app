@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { useApp } from '../AppContext';
 import * as db from '../db';
 import { PenTool, Undo2, MessageSquare, Edit2, Trash2 } from 'lucide-react';
@@ -9,12 +10,6 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo, returnVie
     const containerRef = useRef(null);
     const { currentUser } = useApp();
 
-    const [notes, setNotes] = useState('');
-    const [selectedTags, setSelectedTags] = useState([]);
-    const [isDrawing, setIsDrawing] = useState(false);
-    const [isDrawMode, setIsDrawMode] = useState(true);
-    const [color, setColor] = useState('#ef4444');
-    const [isSaving, setIsSaving] = useState(false);
     const [history, setHistory] = useState([]);
 
     const [originalPhotoUrl, setOriginalPhotoUrl] = useState(photoUrl);
@@ -207,26 +202,34 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo, returnVie
         }
 
         setIsSaving(false);
-        navigateTo(returnView, projectId, null, null);
+        navigateTo(returnView, projectId);
+    };
+
+    const handleCancel = () => {
+        navigateTo(returnView, projectId);
     };
 
     return (
-        <div className="markup-view" style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 3000,
-            display: 'flex',
-            flexDirection: 'column',
-            backgroundColor: 'var(--background)',
-            paddingTop: 'env(safe-area-inset-top)',
-            paddingBottom: 'env(safe-area-inset-bottom)',
-            opacity: isCanvasReady ? 1 : 0,
-            pointerEvents: isCanvasReady ? 'auto' : 'none',
-            transition: 'opacity 0.2s ease-out'
-        }}>
+        <motion.div
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                zIndex: 3000,
+                display: 'flex',
+                flexDirection: 'column',
+                backgroundColor: 'var(--background)',
+                paddingTop: 'env(safe-area-inset-top)',
+                paddingBottom: 'env(safe-area-inset-bottom)',
+                opacity: isCanvasReady ? 1 : 0,
+                transition: 'opacity 0.2s ease-out'
+            }}>
             <header className="header" style={{ justifyContent: 'center' }}>
                 <h2 style={{ margin: 0, fontSize: '1.2rem' }}>Markup Photo</h2>
             </header>
@@ -236,6 +239,8 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo, returnVie
                 flexDirection: 'column',
                 backgroundColor: 'var(--surface)',
                 borderBottom: '1px solid var(--border)',
+                position: 'relative',
+                zIndex: 10
             }}>
                 {/* Row 1: Colors + Actions */}
                 <div style={{
@@ -305,8 +310,30 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo, returnVie
                 </div>
 
                 {/* Row 2: Tag Selector */}
-                <div style={{ padding: '0 1rem 0.6rem' }}>
-                    <TagSelector selectedTags={selectedTags} onTagsChange={setSelectedTags} />
+                <div style={{ padding: '0 1rem 0.5rem' }}>
+                    <TagSelector selectedTags={selectedTags} onTagsChange={setSelectedTags} dropdownDirection="down" />
+                </div>
+
+                {/* Row 3: Notes */}
+                <div style={{ padding: '0 1rem 0.75rem' }}>
+                    <textarea
+                        value={notes}
+                        onChange={e => setNotes(e.target.value)}
+                        placeholder="Add a note..."
+                        rows={2}
+                        style={{
+                            width: '100%',
+                            backgroundColor: 'var(--background)',
+                            color: 'var(--text-primary)',
+                            border: '1px solid var(--border)',
+                            borderRadius: '8px',
+                            padding: '0.6rem 0.75rem',
+                            fontFamily: 'inherit',
+                            fontSize: '1rem',
+                            resize: 'none',
+                            boxSizing: 'border-box',
+                        }}
+                    />
                 </div>
             </div>
 
@@ -352,7 +379,7 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo, returnVie
             <div style={{ flex: 'none', display: 'flex', gap: '0.5rem', padding: '1rem', backgroundColor: 'var(--surface)', borderTop: '1px solid var(--border)' }}>
                 <button
                     className="btn"
-                    onClick={() => navigateTo(returnView, projectId, null, editingPhotoId)}
+                    onClick={handleCancel}
                     style={{ flex: 1, padding: '0.8rem 0.5rem', fontSize: '0.9rem' }}
                 >
                     Cancel
@@ -375,7 +402,7 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo, returnVie
                     {isSaving ? 'Saving...' : 'Save'}
                 </button>
             </div>
-        </div>
+        </motion.div>
     );
 };
 

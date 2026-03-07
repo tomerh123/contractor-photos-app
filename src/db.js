@@ -288,7 +288,7 @@ export const updatePhoto = async (photoId, newImageFile, newNotes, isMarkedUp = 
     const docRef = doc(firestore, 'photos', photoId);
     const updates = {
         ImageFile: imageUrl,
-        Timestamp: new Date().toISOString()
+        EditedAt: new Date().toISOString()
     };
     if (newNotes !== undefined) updates.Notes = newNotes;
     if (isMarkedUp !== undefined) updates.IsMarkedUp = isMarkedUp;
@@ -301,7 +301,7 @@ export const updatePhoto = async (photoId, newImageFile, newNotes, isMarkedUp = 
         const p = photos.find(x => x.PhotoID === photoId);
         if (p) {
             p.ImageFile = imageUrl;
-            p.Timestamp = updates.Timestamp;
+            p.EditedAt = updates.EditedAt;
             if (newNotes !== undefined) p.Notes = newNotes;
             if (isMarkedUp !== undefined) p.IsMarkedUp = isMarkedUp;
             if (origUrl !== undefined) p.OriginalImageFile = origUrl;
@@ -313,7 +313,7 @@ export const updatePhoto = async (photoId, newImageFile, newNotes, isMarkedUp = 
         const ap = memoryCache.allPhotos.find(x => x.PhotoID === photoId);
         if (ap) {
             ap.ImageFile = imageUrl;
-            ap.Timestamp = updates.Timestamp;
+            ap.EditedAt = updates.EditedAt;
             if (newNotes !== undefined) ap.Notes = newNotes;
             if (isMarkedUp !== undefined) ap.IsMarkedUp = isMarkedUp;
             if (origUrl !== undefined) ap.OriginalImageFile = origUrl;

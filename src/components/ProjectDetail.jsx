@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import * as db from '../db';
 import exifr from 'exifr';
 import PhotoViewer from './PhotoViewer';
@@ -254,9 +255,10 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, returnView = 'HO
 
     let filterOptions = [];
     if (isRoot) {
+        filterOptions.push({ value: 'AllPhotos', label: 'All Photos' });
         filterOptions.push({ value: 'All', label: 'Rooms & Photos' });
         if (hasFolders) filterOptions.push({ value: 'Rooms', label: 'Rooms' });
-        if (hasPhotos || uniqueTags.length > 0) filterOptions.push({ value: 'Photos', label: 'All Photos' });
+        if (hasPhotos || uniqueTags.length > 0) filterOptions.push({ value: 'Photos', label: 'Unassigned' });
     } else {
         filterOptions.push({ value: 'All', label: 'All Photos' });
     }
@@ -272,9 +274,11 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, returnView = 'HO
         return opt ? opt.label : `#${val}`;
     };
 
-    const displayedPhotos = effectiveFilter === 'All' || effectiveFilter === 'Photos'
-        ? activeFolderPhotos
-        : effectiveFilter === 'Rooms' ? [] : activeFolderPhotos.filter(p => p.Tags && p.Tags.includes(effectiveFilter));
+    const displayedPhotos = effectiveFilter === 'AllPhotos'
+        ? [...photos].sort((a, b) => new Date(b.Timestamp) - new Date(a.Timestamp))
+        : effectiveFilter === 'All' || effectiveFilter === 'Photos'
+            ? activeFolderPhotos
+            : effectiveFilter === 'Rooms' ? [] : activeFolderPhotos.filter(p => p.Tags && p.Tags.includes(effectiveFilter));
 
     return (
         <div className="project-detail-view" style={{ paddingBottom: '110px' }}>
@@ -458,7 +462,7 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, returnView = 'HO
                         )}
 
                         {/* Rooms Grid (Only visible at Root) */}
-                        {isRoot && !isSelectionMode && (effectiveFilter === 'All' || effectiveFilter === 'Rooms') && (
+                        {isRoot && !isSelectionMode && effectiveFilter !== 'AllPhotos' && (effectiveFilter === 'All' || effectiveFilter === 'Rooms') && (
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem', marginBottom: '1.5rem' }}>
                                 {folders.map(folder => {
                                     const folderPhotos = photos.filter(p => p.FolderID === folder.FolderID);
@@ -503,7 +507,7 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, returnView = 'HO
                         )}
 
                         {effectiveFilter !== 'Rooms' && (
-                            activeFolderPhotos.length === 0 ? (
+                            displayedPhotos.length === 0 ? (
                                 <div style={{ padding: '2rem', textAlign: 'center', backgroundColor: 'var(--surface)', borderRadius: '12px', color: 'var(--text-secondary)' }}>
                                     <p>No photos yet.</p>
                                     <p style={{ fontSize: '0.8rem', marginTop: '0.5rem' }}>Tap the camera icon to take the first photo, or the upload icon to import.</p>
@@ -577,7 +581,24 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, returnView = 'HO
                                                     ))}
                                                 </div>
                                             )}
-                                            {photo.Notes && (
+                                            {(effectiveFilter === 'AllPhotos' && photo.FolderID) ? (
+                                                <div style={{
+                                                    position: 'absolute',
+                                                    bottom: 0,
+                                                    left: 0,
+                                                    right: 0,
+                                                    padding: '4px 6px',
+                                                    backgroundColor: 'rgba(0,0,0,0.6)',
+                                                    color: 'white',
+                                                    fontSize: '0.65rem',
+                                                    fontWeight: 600,
+                                                    whiteSpace: 'nowrap',
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis'
+                                                }}>
+                                                    🏠 {folders.find(f => f.FolderID === photo.FolderID)?.Name || 'Room'}
+                                                </div>
+                                            ) : (photo.Notes && (
                                                 <div style={{
                                                     position: 'absolute',
                                                     bottom: 0,
@@ -593,7 +614,7 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, returnView = 'HO
                                                 }}>
                                                     📝 {photo.Notes}
                                                 </div>
-                                            )}
+                                            ))}
                                         </div>
                                     ))}
                                 </div>
@@ -656,40 +677,42 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, returnView = 'HO
             )}
 
             {/* Advanced Photo Viewer */}
-            {selectedPhoto && (
-                <PhotoViewer
-                    photos={displayedPhotos}
-                    initialIndex={displayedPhotos.findIndex(p => p.PhotoID === selectedPhoto.PhotoID)}
-                    disableAnimation={selectedPhoto.PhotoID === initialPhotoId}
-                    onClose={() => setSelectedPhoto(null)}
-                    onAnnotate={(photo) => {
-                        // DO NOT close viewer! Keep it mounted behind the Markup overlay!
-                        navigateTo('MARKUP', projectId, photo.ImageFile, photo.PhotoID);
-                    }}
-                    onUpdateNotes={async (photoId, newNotes, newTags) => {
-                        await db.updatePhotoDetails(photoId, newNotes, newTags);
-                        // Refresh the photo list so the gallery and viewer update
-                        const projPhotos = await db.getPhotosForProject(projectId);
-                        setPhotos(projPhotos);
-                        if (selectedPhoto.PhotoID === photoId) {
-                            setSelectedPhoto(projPhotos.find(p => p.PhotoID === photoId));
-                        }
-                    }}
-                    onDelete={async (photoId) => {
-                        await db.deletePhoto(photoId);
-                        const newPhotos = await db.getPhotosForProject(projectId);
-                        setPhotos(newPhotos);
-                        if (newPhotos.length === 0) {
-                            setSelectedPhoto(null);
-                        }
-                    }}
-                    getFolderName={(folderId) => {
-                        if (!folderId) return null;
-                        const f = folders.find(folder => folder.FolderID === folderId);
-                        return f ? f.Name : null;
-                    }}
-                />
-            )}
+            <AnimatePresence>
+                {selectedPhoto && (
+                    <PhotoViewer
+                        photos={displayedPhotos}
+                        initialIndex={displayedPhotos.findIndex(p => p.PhotoID === selectedPhoto.PhotoID)}
+                        disableAnimation={selectedPhoto.PhotoID === initialPhotoId}
+                        onClose={() => setSelectedPhoto(null)}
+                        onAnnotate={(photo) => {
+                            // DO NOT close viewer! Keep it mounted behind the Markup overlay!
+                            navigateTo('MARKUP', projectId, photo.ImageFile, photo.PhotoID);
+                        }}
+                        onUpdateNotes={async (photoId, newNotes, newTags) => {
+                            await db.updatePhotoDetails(photoId, newNotes, newTags);
+                            // Refresh the photo list so the gallery and viewer update
+                            const projPhotos = await db.getPhotosForProject(projectId);
+                            setPhotos(projPhotos);
+                            if (selectedPhoto.PhotoID === photoId) {
+                                setSelectedPhoto(projPhotos.find(p => p.PhotoID === photoId));
+                            }
+                        }}
+                        onDelete={async (photoId) => {
+                            await db.deletePhoto(photoId);
+                            const newPhotos = await db.getPhotosForProject(projectId);
+                            setPhotos(newPhotos);
+                            if (newPhotos.length === 0) {
+                                setSelectedPhoto(null);
+                            }
+                        }}
+                        getFolderName={(folderId) => {
+                            if (!folderId) return null;
+                            const f = folders.find(folder => folder.FolderID === folderId);
+                            return f ? f.Name : null;
+                        }}
+                    />
+                )}
+            </AnimatePresence>
             {/* New Folder Modal */}
             {showNewFolderModal && (
                 <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 4000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }} onClick={() => setShowNewFolderModal(false)}>
