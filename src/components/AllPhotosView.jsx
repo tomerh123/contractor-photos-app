@@ -107,33 +107,46 @@ const AllPhotosView = ({ navigateTo, initialPhotoId }) => {
 
     return (
         <div className="project-detail-view" style={{ paddingBottom: '110px' }}>
-            <header className="header" style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '64px' }}>
-                <button className="btn" onClick={() => navigateTo('HOME')} style={{ position: 'absolute', left: '1.5rem', padding: '0.5rem', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <header className="header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+                <button 
+                    className="btn" 
+                    onClick={() => navigateTo('HOME')} 
+                    style={{ 
+                        background: 'var(--surface-active)', 
+                        border: '1px solid var(--border)', 
+                        padding: '0.5rem', 
+                        borderRadius: '50%', 
+                        width: '40px', 
+                        height: '40px', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center', 
+                        flexShrink: 0 
+                    }}
+                >
                     <ArrowLeft size={20} />
                 </button>
-                <div style={{ textAlign: 'center', overflow: 'hidden', padding: '0 50px', width: '100%' }}>
-                    <h2 style={{ fontSize: '1.2rem', margin: 0, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
-                        All Photos
-                    </h2>
+                <div style={{ flex: 1, textAlign: 'center', minWidth: 0 }}>
+                    <h2 style={{ fontSize: '1.2rem', margin: 0 }}>All Photos</h2>
                 </div>
                 <button
                     onClick={() => setSortOrder(sortOrder === 'newest' ? 'oldest' : 'newest')}
                     style={{
-                        position: 'absolute',
-                        right: '1.5rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
                         background: 'transparent',
                         border: 'none',
                         color: 'var(--text-primary)',
                         padding: '0.5rem',
                         cursor: 'pointer',
                         fontSize: '0.9rem',
-                        fontWeight: '500'
+                        fontWeight: '500',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        flexShrink: 0,
+                        width: '70px',
+                        justifyContent: 'flex-end'
                     }}
                 >
-                    Newest
                     {sortOrder === 'newest' ? <ArrowUp size={16} /> : <ArrowDown size={16} />}
                 </button>
             </header>

@@ -292,15 +292,31 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, returnView = 'HO
                 onChange={handleImportPhoto}
             />
 
-            <header className="header" style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <button className="btn" onClick={() => activeFolderId ? setActiveFolderId(null) : navigateTo(returnView)} style={{ position: 'absolute', left: '1.5rem', top: '50%', transform: 'translateY(-50%)', padding: '0.5rem', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <header className="header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+                <button 
+                    className="btn" 
+                    onClick={() => activeFolderId ? setActiveFolderId(null) : navigateTo(returnView)} 
+                    style={{ 
+                        background: 'var(--surface-active)', 
+                        border: '1px solid var(--border)', 
+                        padding: '0.5rem', 
+                        borderRadius: '50%', 
+                        width: '40px', 
+                        height: '40px', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center', 
+                        flexShrink: 0 
+                    }}
+                >
                     <ArrowLeft size={20} />
                 </button>
-                <div style={{ textAlign: 'center', overflow: 'hidden', padding: '0 50px', width: '100%' }}>
+                <div style={{ flex: 1, textAlign: 'center', minWidth: 0 }}>
                     <h2 style={{ fontSize: '1.2rem', margin: 0, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
                         {project.ProjectName}
                     </h2>
                 </div>
+                <div style={{ width: '40px' }} /> {/* Spacer to keep title centered */}
             </header>
 
 
