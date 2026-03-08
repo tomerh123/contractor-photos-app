@@ -178,7 +178,7 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
             initial={disableAnimation ? false : { y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
-            transition={{ type: "spring", stiffness: 450, damping: 45, restDelta: 0.01 }}
+            transition={{ type: "tween", ease: [0.32, 0.72, 0, 1], duration: 0.45 }}
             style={{
                 position: 'fixed',
                 top: 0,

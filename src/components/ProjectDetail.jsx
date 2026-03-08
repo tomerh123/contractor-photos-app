@@ -281,7 +281,7 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, returnView = 'HO
             : effectiveFilter === 'Rooms' ? [] : activeFolderPhotos.filter(p => p.Tags && p.Tags.includes(effectiveFilter));
 
     return (
-        <div className="project-detail-view" style={{ paddingBottom: '110px' }}>
+        <div className="project-detail-view" style={{ paddingBottom: '160px' }}>
             {/* Hidden File Input for Camera Roll Import */}
             <input
                 type="file"

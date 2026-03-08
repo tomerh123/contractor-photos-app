@@ -61,7 +61,7 @@ const MyMarkupsView = ({ navigateTo, initialPhotoId }) => {
     const displayedPhotos = photos.filter(p => activeTagFilter === 'All' ? true : (p.Tags && p.Tags.includes(activeTagFilter)));
 
     return (
-        <div className="project-detail-view" style={{ paddingBottom: '110px' }}>
+        <div className="project-detail-view" style={{ paddingBottom: '160px' }}>
             <header className="header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
                 <button 
                     className="btn" 

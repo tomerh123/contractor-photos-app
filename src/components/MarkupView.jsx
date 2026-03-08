@@ -214,7 +214,7 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo, returnVie
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
-            transition={{ type: "spring", stiffness: 450, damping: 45, restDelta: 0.01 }}
+            transition={{ type: "tween", ease: [0.32, 0.72, 0, 1], duration: 0.45 }}
             style={{
                 position: 'fixed',
                 top: 0,

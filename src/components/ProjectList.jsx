@@ -161,7 +161,7 @@ const ProjectList = ({ navigateTo }) => {
         .sort((a, b) => new Date(b.CreatedAt) - new Date(a.CreatedAt));
 
     return (
-        <div className="project-list-view">
+        <div className="project-list-view" style={{ paddingBottom: '160px', overflowX: 'hidden' }}>
             {/* Top Toolbar */}
             <header className="header" style={{ position: 'relative', borderBottom: 'none' }}>
                 <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>

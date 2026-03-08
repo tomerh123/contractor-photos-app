@@ -45,12 +45,17 @@ body {
   width: 100%;
   max-width: 600px;
   margin: 0 auto;
-  position: relative;
   background-color: var(--background);
   overflow-x: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   /* Removed top/bottom padding here to handle it inside absolutely positioned views */
+}
+
+.project-detail-view {
+  background-color: var(--background);
+  min-height: 100%;
+  overflow-x: hidden;
 }
 
 /* Typography */

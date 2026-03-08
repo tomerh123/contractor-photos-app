@@ -130,8 +130,8 @@ function MainRoutes() {
                     animate="center"
                     exit="exit"
                     transition={{
-                        x: { type: "spring", stiffness: 450, damping: 45, restDelta: 0.01 },
-                        opacity: { duration: 0.25, ease: "easeInOut" }
+                        x: { type: "tween", ease: [0.32, 0.72, 0, 1], duration: 0.45 },
+                        opacity: { duration: 0.3, ease: "easeInOut" }
                     }}
                     style={{
                         position: 'absolute',
@@ -141,6 +141,7 @@ function MainRoutes() {
                         bottom: 0,
                         backgroundColor: 'var(--background)',
                         overflowY: 'auto',
+                        overflowX: 'hidden',
                         WebkitOverflowScrolling: 'touch',
                         willChange: 'transform, opacity'
                     }}

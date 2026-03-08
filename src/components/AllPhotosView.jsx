@@ -106,7 +106,7 @@ const AllPhotosView = ({ navigateTo, initialPhotoId }) => {
     };
 
     return (
-        <div className="project-detail-view" style={{ paddingBottom: '110px' }}>
+        <div className="project-detail-view" style={{ paddingBottom: '160px' }}>
             <header className="header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
                 <button 
                     className="btn" 
