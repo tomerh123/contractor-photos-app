@@ -1,7 +1,7 @@
 :root {
-  --primary-color: #38bdf8;
-  --primary-color-dark: #0ea5e9;
-  --primary-light: rgba(56, 189, 248, 0.1);
+  --primary-color: #f97316;
+  --primary-color-dark: #ea6c0c;
+  --primary-light: rgba(249, 115, 22, 0.1);
   --background: #0f1115;
   --surface: #1e2128;
   --surface-hover: #2a2f3a;
@@ -19,6 +19,13 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  scrollbar-width: none; /* Hide for Firefox */
+  -ms-overflow-style: none; /* Hide for IE/Edge */
+}
+
+*::-webkit-scrollbar {
+  display: none; /* Hide for Chrome/Safari/Brave */
 }
 
 html,
