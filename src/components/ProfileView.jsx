@@ -126,7 +126,7 @@ const ProfileView = ({ navigateTo }) => {
 
     const getInitials = (nameStr) => {
         if (!nameStr) return 'NA';
-        return nameStr.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+        return (nameStr?.split(' ')?.map(n => n[0])?.join('') || 'TH').substring(0, 2).toUpperCase();
     };
 
     return (

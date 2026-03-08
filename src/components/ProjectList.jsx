@@ -172,7 +172,7 @@ const ProjectList = ({ navigateTo }) => {
                             display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold',
                             fontSize: '1rem', border: '1px solid var(--border)', cursor: 'pointer'
                         }}>
-                        {currentUser?.Name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'TH'}
+                        {(currentUser?.Name?.split(' ')?.map(n => n[0])?.join('') || 'TH').substring(0, 2).toUpperCase()}
                     </div>
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -185,7 +185,9 @@ const ProjectList = ({ navigateTo }) => {
 
             <div style={{ padding: '0 1.5rem' }}>
                 {/* Greeting */}
-                <h1 style={{ fontSize: '1.8rem', marginBottom: '1rem', textAlign: 'center' }}>Welcome, {currentUser?.Name?.split(' ')[0] || 'Tomer'}</h1>
+                <h1 style={{ fontSize: '1.8rem', marginBottom: '1rem', textAlign: 'center' }}>
+                    Welcome, {currentUser?.Name ? currentUser.Name.split(' ')[0] : 'Tomer'}
+                </h1>
 
                 {/* Workspace Section (Elevated to Top) */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem', marginBottom: '1rem' }}>

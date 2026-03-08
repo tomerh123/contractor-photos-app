@@ -33,6 +33,7 @@ export const AppProvider = ({ children }) => {
 
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             setLoading(true);
+            db.clearDBCache();
             if (user) {
                 await refreshProfile(user.uid);
             } else {
