@@ -20,31 +20,24 @@
   padding: 0;
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
-  scrollbar-width: none; /* Hide for Firefox */
-  -ms-overflow-style: none; /* Hide for IE/Edge */
 }
 
-*::-webkit-scrollbar {
-  display: none; /* Hide for Chrome/Safari/Brave */
-}
-
-html,
-body {
+html, body {
+  width: 100%;
   height: 100%;
-  overflow: hidden;
-  overscroll-behavior-y: none;
+  overflow-x: hidden;
+  background-color: var(--background);
 }
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  background-color: var(--background);
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
 }
 
 .app-container {
   height: 100dvh;
-  width: 100vw;
+  width: 100%;
   max-width: 600px;
   margin: 0 auto;
   background-color: var(--background);
@@ -56,7 +49,7 @@ body {
 
 .project-detail-view {
   background-color: var(--background);
-  min-height: 100%;
+  width: 100%;
   overflow-x: hidden;
   padding-bottom: var(--dock-clearance);
 }
