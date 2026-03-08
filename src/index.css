@@ -1,23 +1,18 @@
 :root {
-  --primary-color: #f97316;
-  --primary-color-dark: #ea6c0c;
-
+  --primary-color: #38bdf8;
+  --primary-color-dark: #0ea5e9;
+  --primary-light: rgba(56, 189, 248, 0.1);
   --background: #0f1115;
   --surface: #1e2128;
-  --surface-hover: #2a2e37;
-  --surface-active: #373c47;
-
+  --surface-hover: #2a2f3a;
+  --surface-active: #353b48;
+  --border: rgba(255, 255, 255, 0.1);
+  --border-light: rgba(255, 255, 255, 0.05);
   --text-primary: #ffffff;
-  --text-secondary: #9ca3af;
-  --text-tertiary: #6b7280;
-
-  --border: #2a2e37;
-  --border-light: #373c47;
-
+  --text-secondary: #94a3b8;
   --danger: #ef4444;
-  --success: #10b981;
-  --accent-teal: #fbbf24;
-  --accent-teal-bg: rgba(251, 191, 36, 0.15);
+  --success: #22c55e;
+  --dock-clearance: calc(120px + env(safe-area-inset-bottom));
 }
 
 * {
@@ -42,20 +37,21 @@ body {
 
 .app-container {
   height: 100dvh;
-  width: 100%;
+  width: 100vw;
   max-width: 600px;
   margin: 0 auto;
   background-color: var(--background);
   overflow-x: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  /* Removed top/bottom padding here to handle it inside absolutely positioned views */
+  position: relative;
 }
 
 .project-detail-view {
   background-color: var(--background);
   min-height: 100%;
   overflow-x: hidden;
+  padding-bottom: var(--dock-clearance);
 }
 
 /* Typography */

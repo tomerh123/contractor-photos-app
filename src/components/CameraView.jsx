@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Camera as CameraIcon } from 'lucide-react';
 
@@ -49,11 +48,7 @@ const CameraView = ({ projectId, navigateTo, returnView = 'HOME' }) => {
     }, [projectId, navigateTo]);
 
     return (
-        <motion.div
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            transition={{ type: "tween", ease: [0.32, 0.72, 0, 1], duration: 0.45 }}
+        <div
             style={{
                 position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
                 backgroundColor: 'var(--background)', zIndex: 1000,
@@ -83,7 +78,7 @@ const CameraView = ({ projectId, navigateTo, returnView = 'HOME' }) => {
                     <p style={{ color: 'var(--text-secondary)' }}>Waiting for secure Apple Sandbox bridge.</p>
                 </>
             )}
-        </motion.div>
+        </div>
     );
 };
 

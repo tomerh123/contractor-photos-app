@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { Trash2, MessageSquare, PenTool, Download, ChevronLeft, Pencil } from 'lucide-react';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Media } from '@capacitor-community/media';
@@ -174,11 +173,7 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
     };
 
     return (
-        <motion.div
-            initial={disableAnimation ? false : { y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            transition={{ type: "tween", ease: [0.32, 0.72, 0, 1], duration: 0.45 }}
+        <div
             style={{
                 position: 'fixed',
                 top: 0,
@@ -189,8 +184,7 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
                 zIndex: 2000,
                 display: 'flex',
                 flexDirection: 'column',
-                touchAction: 'none',
-                willChange: 'transform'
+                touchAction: 'none'
             }}
         >
             {/* Header Controls */}
@@ -478,8 +472,8 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
 
             {/* Delete Confirmation Modal */}
             {showDeleteModal && (
-                <div className="modal-overlay" style={{ zIndex: 3000, alignItems: 'center', padding: '1.5rem' }}>
-                    <div className="modal-content" style={{ textAlign: 'center' }}>
+                <div className="modal-overlay" style={{ zIndex: 3000, alignItems: 'center', padding: '1.5rem', display: 'flex' }}>
+                    <div className="modal-content" style={{ textAlign: 'center', animation: 'none' }}>
                         <div style={{
                             width: '48px',
                             height: '48px',
@@ -517,7 +511,7 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
                     </div>
                 </div>
             )}
-        </motion.div>
+        </div>
     );
 };
 

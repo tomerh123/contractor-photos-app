@@ -1,5 +1,4 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { useApp } from '../AppContext';
 import * as db from '../db';
 import { PenTool, Undo2, MessageSquare, Edit2, Trash2 } from 'lucide-react';
@@ -153,7 +152,7 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo, returnVie
             clientY = e.touches[0].clientY;
         } else {
             clientX = e.nativeEvent.clientX || e.clientX;
-            clientY = e.nativeEvent.clientY || e.clientY;
+            clientY = e.nativeEvent.clientY || e.clientX;
         }
 
         return {
@@ -210,26 +209,20 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo, returnVie
     };
 
     return (
-        <motion.div
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            transition={{ type: "tween", ease: [0.32, 0.72, 0, 1], duration: 0.45 }}
+        <div
             style={{
                 position: 'fixed',
                 top: 0,
                 left: 0,
                 right: 0,
                 bottom: 0,
-                zIndex: 3000,
+                backgroundColor: 'var(--background)',
+                zIndex: 2000,
                 display: 'flex',
                 flexDirection: 'column',
-                backgroundColor: 'var(--background)',
-                paddingBottom: 'env(safe-area-inset-bottom)',
-                opacity: isCanvasReady ? 1 : 0,
-                transition: 'opacity 0.2s ease-out',
-                willChange: 'transform'
-            }}>
+                overflow: 'hidden'
+            }}
+        >
             <header className="header" style={{ justifyContent: 'center' }}>
                 <h2 style={{ margin: 0, fontSize: '1.2rem' }}>Markup Photo</h2>
             </header>
@@ -402,7 +395,7 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo, returnVie
                     {isSaving ? 'Saving...' : 'Save'}
                 </button>
             </div>
-        </motion.div>
+        </div>
     );
 };
 
