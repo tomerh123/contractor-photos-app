@@ -580,7 +580,19 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                                 {showTagDropdown === 'sub' && (
                                     <>
                                         <div onClick={() => setShowTagDropdown(null)} style={{ position: 'fixed', inset: 0, zIndex: 50 }} />
-                                        <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden', zIndex: 51, boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}>
+                                        <div style={{ 
+                                            position: 'absolute', 
+                                            top: 'calc(100% + 6px)', 
+                                            left: 0, 
+                                            right: 0, 
+                                            background: 'var(--surface)', 
+                                            border: '1px solid var(--border)', 
+                                            borderRadius: '12px', 
+                                            overflowY: 'auto', 
+                                            maxHeight: '350px',
+                                            zIndex: 51, 
+                                            boxShadow: '0 8px 24px rgba(0,0,0,0.4)' 
+                                        }}>
                                             <div onClick={() => { setActiveSubTagFilter('All'); setShowTagDropdown(null); }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border)', backgroundColor: activeSubTagFilter === 'All' ? 'rgba(249,115,22,0.1)' : 'transparent' }}>
                                                 <span style={{ fontSize: '0.9rem', fontWeight: 600, color: activeSubTagFilter === 'All' ? 'var(--primary-color)' : 'var(--text-primary)' }}>All Tags</span>
                                                 {activeSubTagFilter === 'All' && <Check size={16} color="var(--primary-color)" />}
