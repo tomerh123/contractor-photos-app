@@ -403,7 +403,12 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                 </button>
             </div>
 
-            <div className="content-pad hide-scrollbar" style={{ flex: 1, overflowY: 'auto', paddingBottom: 'var(--dock-clearance)', WebkitOverflowScrolling: 'touch' }}>
+            <div className="content-pad hide-scrollbar" style={{ 
+                flex: 1, 
+                overflowY: 'auto', 
+                paddingBottom: showTagDropdown ? 'calc(var(--dock-clearance) + 300px)' : 'var(--dock-clearance)', 
+                WebkitOverflowScrolling: 'touch' 
+            }}>
                 {/* Project Location Header Context */}
                 {project.Location && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.95rem' }}>
@@ -523,7 +528,19 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                                         {/* Backdrop */}
                                         <div onClick={() => setShowTagDropdown(null)} style={{ position: 'fixed', inset: 0, zIndex: 50 }} />
                                         {/* Panel */}
-                                        <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden', zIndex: 51, boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}>
+                                        <div style={{ 
+                                            position: 'absolute', 
+                                            top: 'calc(100% + 6px)', 
+                                            left: 0, 
+                                            right: 0, 
+                                            background: 'var(--surface)', 
+                                            border: '1px solid var(--border)', 
+                                            borderRadius: '12px', 
+                                            overflowY: 'auto', 
+                                            maxHeight: '350px',
+                                            zIndex: 51, 
+                                            boxShadow: '0 8px 24px rgba(0,0,0,0.4)' 
+                                        }}>
                                             {filterOptions.map(opt => (
                                                 <div
                                                     key={opt.value}
