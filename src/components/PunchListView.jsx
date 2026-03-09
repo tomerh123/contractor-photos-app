@@ -29,7 +29,8 @@ const PunchListView = ({ projectId }) => {
         });
 
         setNewTaskText('');
-        loadTodos();
+        await loadTodos();
+        if (onTodosChange) onTodosChange();
     };
 
     const handleToggleTodo = async (todoId) => {
@@ -39,6 +40,9 @@ const PunchListView = ({ projectId }) => {
         );
         setTodos(updatedTodos);
 
+        // Update parent counter immediately if callback exists
+        if (onTodosChange) onTodosChange();
+
         // Persist to DB
         await db.toggleTodo(todoId);
         loadTodos(); // Refresh to catch actual DB state and sorting
@@ -46,7 +50,8 @@ const PunchListView = ({ projectId }) => {
 
     const handleDeleteTodo = async (todoId) => {
         await db.deleteTodo(todoId);
-        loadTodos();
+        await loadTodos();
+        if (onTodosChange) onTodosChange();
     };
 
     // Sort todos: active ones first, completed ones at the bottom, then by timestamp

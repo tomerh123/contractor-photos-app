@@ -74,17 +74,18 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
         );
     };
 
+    const fetchTodoCount = async () => {
+        try {
+            const todos = await db.getTodosForProject(projectId);
+            setOpenTodosCount(todos.filter(t => !t.IsCompleted).length);
+        } catch (err) {
+            console.error("Error fetching todos count:", err);
+        }
+    };
+
     // Fetch punch list info
     useEffect(() => {
-        const fetchTodos = async () => {
-            try {
-                const todos = await db.getTodosForProject(projectId);
-                setOpenTodosCount(todos.filter(t => !t.IsCompleted).length);
-            } catch (err) {
-                console.error("Error fetching todos count:", err);
-            }
-        };
-        fetchTodos();
+        fetchTodoCount();
     }, [projectId, activeTab]);
 
     const openPhotoViewer = (photo) => {
@@ -756,10 +757,10 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                     </>
                 )}
 
-                {activeTab === 'PUNCHLIST' && (
-                    <PunchListView projectId={projectId} />
-                )}
-            </div>
+                    {activeTab === 'PUNCHLIST' && (
+                        <PunchListView projectId={projectId} onTodosChange={fetchTodoCount} />
+                    )}
+                </div>
 
             {/* Contextual Multi-Select Bottom Bar */}
             {isSelectionMode && (
