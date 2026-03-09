@@ -320,19 +320,19 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo, returnVie
                 </div>
 
                 {/* Row 3: Notes */}
-                <div style={{ padding: '0 1rem 0.75rem' }}>
+                <div style={{ padding: '0 1rem 0.5rem' }}>
                     <textarea
                         value={notes}
                         onChange={e => setNotes(e.target.value)}
                         placeholder="Add a note..."
-                        rows={2}
+                        rows={1}
                         style={{
                             width: '100%',
                             backgroundColor: 'var(--background)',
                             color: 'var(--text-primary)',
                             border: '1px solid var(--border)',
                             borderRadius: '8px',
-                            padding: '0.6rem 0.75rem',
+                            padding: '0.4rem 0.6rem',
                             fontFamily: 'inherit',
                             fontSize: '1rem',
                             resize: 'none',
