@@ -466,16 +466,16 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                                         <>
                                             <button
                                                 onClick={() => setShowNewFolderModal(true)}
-                                                style={{ flex: 1, minHeight: '74px', background: '#38bdf8', border: '1px solid #38bdf8', color: '#0f1115', padding: '10px 8px', borderRadius: '12px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                                                style={{ flex: 1, minHeight: '74px', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.2)', color: '#38bdf8', padding: '10px 8px', borderRadius: '12px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                                             >
-                                                <Plus size={18} color="#0f1115" strokeWidth={3} />
+                                                <Plus size={18} color="#38bdf8" strokeWidth={3} />
                                                 <span style={{ fontSize: '0.8rem', fontWeight: 800, textAlign: 'center', lineHeight: 1.2 }}>New<br/>Room</span>
                                             </button>
                                             <button
                                                 onClick={() => setShowManageTagsModal(true)}
-                                                style={{ flex: 1, minHeight: '74px', background: 'var(--primary-color)', border: '1px solid var(--primary-color)', color: '#0f1115', padding: '10px 8px', borderRadius: '12px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                                                style={{ flex: 1, minHeight: '74px', background: 'rgba(249, 115, 22, 0.1)', border: '1px solid rgba(249, 115, 22, 0.2)', color: 'var(--primary-color)', padding: '10px 8px', borderRadius: '12px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                                             >
-                                                <TagIcon size={18} color="#0f1115" strokeWidth={3} />
+                                                <TagIcon size={18} color="var(--primary-color)" strokeWidth={3} />
                                                 <span style={{ fontSize: '0.8rem', fontWeight: 800, textAlign: 'center', lineHeight: 1.2 }}>Manage<br/>Tags</span>
                                             </button>
                                         </>
@@ -488,9 +488,9 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                                             style={{ 
                                                 flex: activeFolderId ? 1 : 1, 
                                                 minHeight: activeFolderId ? 'auto' : '74px',
-                                                background: 'white', 
-                                                border: '1px solid white', 
-                                                color: '#0f1115', 
+                                                background: 'rgba(255, 255, 255, 0.1)', 
+                                                border: '1px solid rgba(255, 255, 255, 0.2)', 
+                                                color: 'white', 
                                                 padding: activeFolderId ? '12px 14px' : '10px 8px', 
                                                 borderRadius: '12px', 
                                                 cursor: 'pointer', 
@@ -501,7 +501,7 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                                                 gap: '6px' 
                                             }}
                                         >
-                                            <CheckSquare size={18} color="#0f1115" strokeWidth={3} />
+                                            <CheckSquare size={18} color="white" strokeWidth={3} />
                                             <span style={{ fontSize: '0.8rem', fontWeight: 800, textAlign: 'center', lineHeight: 1.1 }}>
                                                 {activeFolderId ? 'Select Photos' : <>Select<br/>Photos</>}
                                             </span>
