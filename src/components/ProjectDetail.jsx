@@ -406,7 +406,7 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
             <div className="content-pad hide-scrollbar" style={{ 
                 flex: 1, 
                 overflowY: 'auto', 
-                paddingBottom: showTagDropdown ? 'calc(var(--dock-clearance) + 300px)' : 'var(--dock-clearance)', 
+                paddingBottom: 'var(--dock-clearance)', 
                 WebkitOverflowScrolling: 'touch' 
             }}>
                 {/* Project Location Header Context */}
@@ -526,7 +526,7 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                                 {showTagDropdown === 'main' && (
                                     <>
                                         {/* Backdrop */}
-                                        <div onClick={() => setShowTagDropdown(null)} style={{ position: 'fixed', inset: 0, zIndex: 50 }} />
+                                        <div onClick={() => setShowTagDropdown(null)} style={{ position: 'fixed', inset: 0, zIndex: 199 }} />
                                         {/* Panel */}
                                         <div style={{ 
                                             position: 'absolute', 
@@ -537,8 +537,8 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                                             border: '1px solid var(--border)', 
                                             borderRadius: '12px', 
                                             overflowY: 'auto', 
-                                            maxHeight: '350px',
-                                            zIndex: 51, 
+                                            maxHeight: '450px',
+                                            zIndex: 200, 
                                             boxShadow: '0 8px 24px rgba(0,0,0,0.4)' 
                                         }}>
                                             {filterOptions.map(opt => (
@@ -579,7 +579,7 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
 
                                 {showTagDropdown === 'sub' && (
                                     <>
-                                        <div onClick={() => setShowTagDropdown(null)} style={{ position: 'fixed', inset: 0, zIndex: 50 }} />
+                                        <div onClick={() => setShowTagDropdown(null)} style={{ position: 'fixed', inset: 0, zIndex: 199 }} />
                                         <div style={{ 
                                             position: 'absolute', 
                                             top: 'calc(100% + 6px)', 
@@ -589,8 +589,8 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                                             border: '1px solid var(--border)', 
                                             borderRadius: '12px', 
                                             overflowY: 'auto', 
-                                            maxHeight: '350px',
-                                            zIndex: 51, 
+                                            maxHeight: '450px',
+                                            zIndex: 200, 
                                             boxShadow: '0 8px 24px rgba(0,0,0,0.4)' 
                                         }}>
                                             <div onClick={() => { setActiveSubTagFilter('All'); setShowTagDropdown(null); }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border)', backgroundColor: activeSubTagFilter === 'All' ? 'rgba(249,115,22,0.1)' : 'transparent' }}>
