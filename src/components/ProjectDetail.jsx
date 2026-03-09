@@ -41,6 +41,7 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
     const [tagToRename, setTagToRename] = useState(null);
     const [newTagNameInput, setNewTagNameInput] = useState('');
     const [tagToDelete, setTagToDelete] = useState(null);
+    const [openTodosCount, setOpenTodosCount] = useState(0);
 
     const fileInputRef = useRef(null);
     const longPressTimer = useRef(null);
@@ -72,6 +73,19 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
             </div>
         );
     };
+
+    // Fetch punch list info
+    useEffect(() => {
+        const fetchTodos = async () => {
+            try {
+                const todos = await db.getTodosForProject(projectId);
+                setOpenTodosCount(todos.filter(t => !t.IsCompleted).length);
+            } catch (err) {
+                console.error("Error fetching todos count:", err);
+            }
+        };
+        fetchTodos();
+    }, [projectId, activeTab]);
 
     const openPhotoViewer = (photo) => {
         setSelectedPhoto(photo);
@@ -384,18 +398,17 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                 >
                     <ImageIcon size={18} /> Gallery
                 </button>
-                <button
+                <button 
                     onClick={() => setActiveTab('PUNCHLIST')}
-                    style={{
-                        flex: 1,
-                        padding: '1rem',
-                        background: 'none',
-                        border: 'none',
+                    style={{ 
+                        flex: 1, 
+                        padding: '12px 16px', 
+                        border: 'none', 
+                        backgroundColor: 'transparent', 
                         borderBottom: activeTab === 'PUNCHLIST' ? '2px solid var(--primary-color)' : '2px solid transparent',
                         color: activeTab === 'PUNCHLIST' ? 'var(--text-primary)' : 'var(--text-secondary)',
-                        fontWeight: 600,
-                        fontSize: '0.95rem',
-                        cursor: 'pointer',
+                        fontWeight: activeTab === 'PUNCHLIST' ? 600 : 400,
+                        fontSize: '1rem',
                         transition: 'all 0.2s',
                         display: 'flex',
                         alignItems: 'center',
@@ -403,7 +416,7 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                         gap: '8px'
                     }}
                 >
-                    <CheckSquare size={18} /> Punch List
+                    <CheckSquare size={18} /> Punch List {openTodosCount > 0 && `(${openTodosCount})`}
                 </button>
             </div>
 
@@ -445,7 +458,26 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                                             <Edit2 size={14} />
                                         </button>
                                     </span>
-                                ) : 'Photo Gallery'}
+                                ) : (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <span>Photo Gallery</span>
+                                        {openTodosCount > 0 && (
+                                            <span style={{
+                                                backgroundColor: 'white',
+                                                color: 'var(--background)',
+                                                fontSize: '0.8rem',
+                                                fontWeight: 'bold',
+                                                padding: '2px 8px',
+                                                borderRadius: '12px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '3px'
+                                            }}>
+                                                {openTodosCount} left
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
                             </h3>
                         </div>
 
