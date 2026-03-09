@@ -23,14 +23,22 @@ const PunchListView = ({ projectId, onTodosChange }) => {
         e.preventDefault();
         if (!newTaskText.trim()) return;
 
-        await db.addTodo({
+        const newTodo = {
             ProjectID: projectId,
-            Text: newTaskText.trim()
-        });
+            Text: newTaskText.trim(),
+            IsCompleted: false,
+            Timestamp: new Date().toISOString()
+        };
 
+        // Pass updated count immediately
+        if (onTodosChange) {
+            const currentIncomplete = todos.filter(t => !t.IsCompleted).length;
+            onTodosChange(currentIncomplete + 1);
+        }
+
+        await db.addTodo(newTodo);
         setNewTaskText('');
         await loadTodos();
-        if (onTodosChange) onTodosChange();
     };
 
     const handleToggleTodo = async (todoId) => {
@@ -40,8 +48,10 @@ const PunchListView = ({ projectId, onTodosChange }) => {
         );
         setTodos(updatedTodos);
 
-        // Update parent counter immediately if callback exists
-        if (onTodosChange) onTodosChange();
+        // Update parent counter immediately with actual new count
+        if (onTodosChange) {
+            onTodosChange(updatedTodos.filter(t => !t.IsCompleted).length);
+        }
 
         // Persist to DB
         await db.toggleTodo(todoId);
@@ -49,9 +59,14 @@ const PunchListView = ({ projectId, onTodosChange }) => {
     };
 
     const handleDeleteTodo = async (todoId) => {
+        // Pass updated count immediately
+        if (onTodosChange) {
+            const updatedCount = todos.filter(t => t.TodoID !== todoId && !t.IsCompleted).length;
+            onTodosChange(updatedCount);
+        }
+
         await db.deleteTodo(todoId);
         await loadTodos();
-        if (onTodosChange) onTodosChange();
     };
 
     // Sort todos: active ones first, completed ones at the bottom, then by timestamp

@@ -74,7 +74,11 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
         );
     };
 
-    const fetchTodoCount = async () => {
+    const fetchTodoCount = async (count) => {
+        if (typeof count === 'number') {
+            setOpenTodosCount(count);
+            return;
+        }
         try {
             const todos = await db.getTodosForProject(projectId);
             setOpenTodosCount(todos.filter(t => !t.IsCompleted).length);
