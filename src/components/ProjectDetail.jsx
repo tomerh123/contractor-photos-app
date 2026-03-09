@@ -44,6 +44,10 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
 
     const fileInputRef = useRef(null);
     const longPressTimer = useRef(null);
+    const filterTriggerRef = useRef(null);
+    const subFilterTriggerRef = useRef(null);
+
+    const [dropdownRect, setDropdownRect] = useState(null);
 
     const formatLocation = (location) => {
         if (!location) return null;
@@ -511,7 +515,12 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                         {(filterOptions.length > 1) && (
                             <div style={{ position: 'relative', marginBottom: '1.5rem' }}>
                                 <div
-                                    onClick={() => setShowTagDropdown(v => v === 'main' ? null : 'main')}
+                                    ref={filterTriggerRef}
+                                    onClick={(e) => {
+                                        const rect = e.currentTarget.getBoundingClientRect();
+                                        setDropdownRect(rect);
+                                        setShowTagDropdown(v => v === 'main' ? null : 'main');
+                                    }}
                                     style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '10px', padding: '8px 14px', cursor: 'pointer', color: 'var(--text-primary)', fontSize: '0.9rem', fontWeight: 600, width: '100%', justifyContent: 'space-between' }}
                                 >
                                     <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -522,52 +531,21 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                                     </span>
                                     <ChevronDown size={16} color="var(--text-secondary)" style={{ transform: showTagDropdown === 'main' ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
                                 </div>
-
-                                {showTagDropdown === 'main' && (
-                                    <>
-                                        {/* Backdrop */}
-                                        <div onClick={() => setShowTagDropdown(null)} style={{ position: 'fixed', inset: 0, zIndex: 199 }} />
-                                        {/* Panel */}
-                                        <div style={{ 
-                                            position: 'absolute', 
-                                            top: 'calc(100% + 6px)', 
-                                            left: 0, 
-                                            right: 0, 
-                                            background: 'var(--surface)', 
-                                            border: '1px solid var(--border)', 
-                                            borderRadius: '12px', 
-                                            overflowY: 'auto', 
-                                            maxHeight: '450px',
-                                            zIndex: 200, 
-                                            boxShadow: '0 8px 24px rgba(0,0,0,0.4)' 
-                                        }}>
-                                            {filterOptions.map(opt => (
-                                                <div
-                                                    key={opt.value}
-                                                    onClick={() => { 
-                                                        setActiveTagFilter(opt.value); 
-                                                        setShowTagDropdown(null);
-                                                        // Reset subfilter when switching view
-                                                        if (opt.value !== 'AllPhotos') setActiveSubTagFilter('All');
-                                                    }}
-                                                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border)', backgroundColor: effectiveFilter === opt.value ? 'rgba(249,115,22,0.1)' : 'transparent' }}
-                                                >
-                                                    <span style={{ fontSize: '0.9rem', fontWeight: 600, color: effectiveFilter === opt.value ? 'var(--primary-color)' : 'var(--text-primary)' }}>
-                                                        {opt.label}
-                                                    </span>
-                                                    {effectiveFilter === opt.value && <Check size={16} color="var(--primary-color)" />}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </>
-                                )}
                             </div>
                         )}
 
                         {/* Sub-Filter Dropdown (Always and only for AllPhotos) */}
                         {effectiveFilter === 'AllPhotos' && projectWideUniqueTags.length > 0 && (
                             <div style={{ position: 'relative', marginBottom: '1.5rem', animation: 'fadeIn 0.3s ease' }}>
-                                <div onClick={() => setShowTagDropdown(v => v === 'sub' ? null : 'sub')} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '10px', padding: '8px 14px', cursor: 'pointer', color: 'var(--text-primary)', fontSize: '0.9rem', fontWeight: 600, width: '100%', justifyContent: 'space-between' }}>
+                                <div 
+                                    ref={subFilterTriggerRef}
+                                    onClick={(e) => {
+                                        const rect = e.currentTarget.getBoundingClientRect();
+                                        setDropdownRect(rect);
+                                        setShowTagDropdown(v => v === 'sub' ? null : 'sub');
+                                    }} 
+                                    style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '10px', padding: '8px 14px', cursor: 'pointer', color: 'var(--text-primary)', fontSize: '0.9rem', fontWeight: 600, width: '100%', justifyContent: 'space-between' }}
+                                >
                                     <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                         <span style={{ color: 'var(--text-secondary)', fontWeight: 400 }}>Filter by Tag:</span>
                                         <span style={{ color: activeSubTagFilter === 'All' ? 'var(--text-primary)' : 'var(--primary-color)' }}>
@@ -576,36 +554,6 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                                     </span>
                                     <ChevronDown size={16} color="var(--text-secondary)" style={{ transform: showTagDropdown === 'sub' ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
                                 </div>
-
-                                {showTagDropdown === 'sub' && (
-                                    <>
-                                        <div onClick={() => setShowTagDropdown(null)} style={{ position: 'fixed', inset: 0, zIndex: 199 }} />
-                                        <div style={{ 
-                                            position: 'absolute', 
-                                            top: 'calc(100% + 6px)', 
-                                            left: 0, 
-                                            right: 0, 
-                                            background: 'var(--surface)', 
-                                            border: '1px solid var(--border)', 
-                                            borderRadius: '12px', 
-                                            overflowY: 'auto', 
-                                            maxHeight: '450px',
-                                            zIndex: 200, 
-                                            boxShadow: '0 8px 24px rgba(0,0,0,0.4)' 
-                                        }}>
-                                            <div onClick={() => { setActiveSubTagFilter('All'); setShowTagDropdown(null); }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border)', backgroundColor: activeSubTagFilter === 'All' ? 'rgba(249,115,22,0.1)' : 'transparent' }}>
-                                                <span style={{ fontSize: '0.9rem', fontWeight: 600, color: activeSubTagFilter === 'All' ? 'var(--primary-color)' : 'var(--text-primary)' }}>All Tags</span>
-                                                {activeSubTagFilter === 'All' && <Check size={16} color="var(--primary-color)" />}
-                                            </div>
-                                            {projectWideUniqueTags.map(tag => (
-                                                <div key={tag} onClick={() => { setActiveSubTagFilter(tag); setShowTagDropdown(null); }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border)', backgroundColor: activeSubTagFilter === tag ? 'rgba(249,115,22,0.1)' : 'transparent' }}>
-                                                    <span style={{ fontSize: '0.9rem', fontWeight: 600, color: activeSubTagFilter === tag ? 'var(--primary-color)' : 'var(--text-primary)' }}>#{tag}</span>
-                                                    {activeSubTagFilter === tag && <Check size={16} color="var(--primary-color)" />}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </>
-                                )}
                             </div>
                         )}
 
@@ -1250,6 +1198,73 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Fixed Dropdown Panels (Moved Outside for Stacking Context) */}
+            {showTagDropdown === 'main' && dropdownRect && (
+                <>
+                    <div onClick={() => setShowTagDropdown(null)} style={{ position: 'fixed', inset: 0, zIndex: 199 }} />
+                    <div style={{ 
+                        position: 'fixed', 
+                        top: dropdownRect.bottom + 6, 
+                        left: dropdownRect.left, 
+                        width: dropdownRect.width, 
+                        background: 'var(--surface)', 
+                        border: '1px solid var(--border)', 
+                        borderRadius: '12px', 
+                        overflowY: 'auto', 
+                        maxHeight: 'max(300px, 45vh)',
+                        zIndex: 200, 
+                        boxShadow: '0 8px 24px rgba(0,0,0,0.4)' 
+                    }}>
+                        {filterOptions.map(opt => (
+                            <div
+                                key={opt.value}
+                                onClick={() => { 
+                                    setActiveTagFilter(opt.value); 
+                                    setShowTagDropdown(null);
+                                    if (opt.value !== 'AllPhotos') setActiveSubTagFilter('All');
+                                }}
+                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border)', backgroundColor: effectiveFilter === opt.value ? 'rgba(249,115,22,0.1)' : 'transparent' }}
+                            >
+                                <span style={{ fontSize: '0.9rem', fontWeight: 600, color: effectiveFilter === opt.value ? 'var(--primary-color)' : 'var(--text-primary)' }}>
+                                    {opt.label}
+                                </span>
+                                {effectiveFilter === opt.value && <Check size={16} color="var(--primary-color)" />}
+                            </div>
+                        ))}
+                    </div>
+                </>
+            )}
+
+            {showTagDropdown === 'sub' && dropdownRect && (
+                <>
+                    <div onClick={() => setShowTagDropdown(null)} style={{ position: 'fixed', inset: 0, zIndex: 199 }} />
+                    <div style={{ 
+                        position: 'fixed', 
+                        top: dropdownRect.bottom + 6, 
+                        left: dropdownRect.left, 
+                        width: dropdownRect.width, 
+                        background: 'var(--surface)', 
+                        border: '1px solid var(--border)', 
+                        borderRadius: '12px', 
+                        overflowY: 'auto', 
+                        maxHeight: 'max(300px, 45vh)',
+                        zIndex: 200, 
+                        boxShadow: '0 8px 24px rgba(0,0,0,0.4)' 
+                    }}>
+                        <div onClick={() => { setActiveSubTagFilter('All'); setShowTagDropdown(null); }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border)', backgroundColor: activeSubTagFilter === 'All' ? 'rgba(249,115,22,0.1)' : 'transparent' }}>
+                            <span style={{ fontSize: '0.9rem', fontWeight: 600, color: activeSubTagFilter === 'All' ? 'var(--primary-color)' : 'var(--text-primary)' }}>All Tags</span>
+                            {activeSubTagFilter === 'All' && <Check size={16} color="var(--primary-color)" />}
+                        </div>
+                        {projectWideUniqueTags.map(tag => (
+                            <div key={tag} onClick={() => { setActiveSubTagFilter(tag); setShowTagDropdown(null); }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border)', backgroundColor: activeSubTagFilter === tag ? 'rgba(249,115,22,0.1)' : 'transparent' }}>
+                                <span style={{ fontSize: '0.9rem', fontWeight: 600, color: activeSubTagFilter === tag ? 'var(--primary-color)' : 'var(--text-primary)' }}>#{tag}</span>
+                                {activeSubTagFilter === tag && <Check size={16} color="var(--primary-color)" />}
+                            </div>
+                        ))}
+                    </div>
+                </>
             )}
         </div>
     );
