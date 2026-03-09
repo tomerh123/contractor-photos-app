@@ -356,7 +356,7 @@ const ProjectList = ({ navigateTo }) => {
                     }}>
                         {displayedProjects.slice(0, 2).map(project => (
                             <div key={project.ProjectID} style={{ width: 'calc(50vw - 2rem)', minWidth: '160px', flex: 'none', scrollSnapAlign: 'start' }}>
-                                <ProjectCard project={project} navigateTo={navigateTo} hideLocation={true} hideCreatedDate={true} />
+                                <ProjectCard project={project} navigateTo={navigateTo} hideLocation={true} />
                             </div>
                         ))}
                     </div>

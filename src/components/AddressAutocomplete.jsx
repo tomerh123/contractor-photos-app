@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MapPin } from 'lucide-react';
+import LoadingSpinner from './LoadingSpinner';
 
 const AddressAutocomplete = ({ value, onChange, placeholder = "Enter location" }) => {
     const [query, setQuery] = useState(value || '');
@@ -114,11 +115,10 @@ const AddressAutocomplete = ({ value, onChange, placeholder = "Enter location" }
                 />
                 {isLoading && (
                     <div style={{
-                        position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)',
-                        width: '12px', height: '12px', border: '2px solid var(--border)',
-                        borderTopColor: 'var(--primary-color)', borderRadius: '50%',
-                        animation: 'spin 1s linear infinite'
-                    }} />
+                        position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)'
+                    }}>
+                        <LoadingSpinner fullScreen={false} size="14px" />
+                    </div>
                 )}
             </div>
 

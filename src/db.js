@@ -91,6 +91,7 @@ export const addProject = async (projectData) => {
         ProjectID,
         userId: getUid(),
         CreatedAt: new Date().toISOString(),
+        UpdatedAt: new Date().toISOString(),
         IsFavorite: false,
         Lat: projectData.Lat || null,
         Lon: projectData.Lon || null,
@@ -101,9 +102,13 @@ export const addProject = async (projectData) => {
     return newProject;
 };
 
-export const updateProject = async (projectId, newProjectData) => {
+export const updateProject = async (projectId, newProjectData, touch = true) => {
     const docRef = doc(firestore, 'projects', projectId);
-    await setDoc(docRef, newProjectData, { merge: true });
+    const updates = { ...newProjectData };
+    if (touch) {
+        updates.UpdatedAt = new Date().toISOString();
+    }
+    await setDoc(docRef, updates, { merge: true });
     clearDBCache();
     const snap = await getDoc(docRef);
     return snap.data();
@@ -114,6 +119,17 @@ export const deleteProject = async (projectId) => {
     await setDoc(docRef, { ArchivedAt: new Date().toISOString() }, { merge: true });
     clearDBCache();
     return true;
+};
+
+export const touchProject = async (projectId) => {
+    if (!projectId) return;
+    try {
+        const docRef = doc(firestore, 'projects', projectId);
+        await updateDoc(docRef, { UpdatedAt: new Date().toISOString() });
+        clearDBCache();
+    } catch (e) {
+        console.error("Error touching project", e);
+    }
 };
 
 export const restoreProject = async (projectId) => {
@@ -230,6 +246,10 @@ export const addPhoto = async (photoData) => {
         memoryCache.allPhotos.unshift(newPhoto);
     }
 
+    if (photoData.ProjectID) {
+        await touchProject(photoData.ProjectID);
+    }
+
     return newPhoto;
 };
 
@@ -257,7 +277,11 @@ export const updatePhotoDetails = async (photoId, newNotes, newTags) => {
     }
 
     const snap = await getDoc(docRef);
-    return snap.data();
+    const data = snap.data();
+    if (data && data.ProjectID) {
+        await touchProject(data.ProjectID);
+    }
+    return data;
 };
 
 export const updatePhoto = async (photoId, newImageFile, newNotes, isMarkedUp = undefined, originalImageFile = undefined, newTags = undefined) => {
@@ -322,12 +346,23 @@ export const updatePhoto = async (photoId, newImageFile, newNotes, isMarkedUp = 
     }
 
     const snap = await getDoc(docRef);
-    return snap.data();
+    const data = snap.data();
+    if (data && data.ProjectID) {
+        await touchProject(data.ProjectID);
+    }
+    return data;
 };
 
 export const deletePhoto = async (photoId) => {
     try {
-        await deleteDoc(doc(firestore, 'photos', photoId));
+        const docRef = doc(firestore, 'photos', photoId);
+        const snap = await getDoc(docRef);
+        let projectID = null;
+        if (snap.exists()) {
+            projectID = snap.data().ProjectID;
+        }
+
+        await deleteDoc(docRef);
 
         Object.keys(memoryCache.projectPhotos).forEach(pid => {
             memoryCache.projectPhotos[pid] = memoryCache.projectPhotos[pid].filter(p => p.PhotoID !== photoId);
@@ -335,8 +370,65 @@ export const deletePhoto = async (photoId) => {
         if (memoryCache.allPhotos) {
             memoryCache.allPhotos = memoryCache.allPhotos.filter(p => p.PhotoID !== photoId);
         }
+        
+        memoryCache.allPhotos = null;
+        memoryCache.projectPhotos = {};
+        
+        if (projectID) {
+            await touchProject(projectID);
+        }
     } catch (e) { console.error("Error deleting photo doc", e); }
     return true;
+};
+
+export const deleteTagGlobally = async (projectId, tagName) => {
+    if (!projectId || !tagName) return;
+    try {
+        const q = query(collection(firestore, 'photos'), where("userId", "==", getUid()), where("ProjectID", "==", projectId));
+        const snap = await getDocs(q);
+        
+        const updatePromises = [];
+        for (const d of snap.docs) {
+            const photo = d.data();
+            if (photo.Tags && photo.Tags.includes(tagName)) {
+                const newTags = photo.Tags.filter(t => t !== tagName);
+                updatePromises.push(updateDoc(doc(firestore, 'photos', d.id), { Tags: newTags }));
+            }
+        }
+        
+        await Promise.all(updatePromises);
+        await touchProject(projectId);
+        clearDBCache();
+        return true;
+    } catch (e) {
+        console.error("Error deleting tag globally", e);
+        return false;
+    }
+};
+
+export const renameTagGlobally = async (projectId, oldTagName, newTagName) => {
+    if (!projectId || !oldTagName || !newTagName || oldTagName === newTagName) return;
+    try {
+        const q = query(collection(firestore, 'photos'), where("userId", "==", getUid()), where("ProjectID", "==", projectId));
+        const snap = await getDocs(q);
+        
+        const updatePromises = [];
+        for (const d of snap.docs) {
+            const photo = d.data();
+            if (photo.Tags && photo.Tags.includes(oldTagName)) {
+                const newTags = Array.from(new Set(photo.Tags.map(t => t === oldTagName ? newTagName : t)));
+                updatePromises.push(updateDoc(doc(firestore, 'photos', d.id), { Tags: newTags }));
+            }
+        }
+        
+        await Promise.all(updatePromises);
+        await touchProject(projectId);
+        clearDBCache();
+        return true;
+    } catch (e) {
+        console.error("Error renaming tag globally", e);
+        return false;
+    }
 };
 
 // --- Project Folders (Rooms) ---
@@ -370,7 +462,20 @@ export const addProjectFolder = async (projectId, name) => {
         CreatedAt: new Date().toISOString()
     };
     await setDoc(doc(firestore, 'folders', FolderID), newFolder);
+    await touchProject(projectId);
     return newFolder;
+};
+
+export const updateProjectFolder = async (folderId, newName) => {
+    const docRef = doc(firestore, 'folders', folderId);
+    await updateDoc(docRef, { Name: newName });
+    const snap = await getDoc(docRef);
+    const data = snap.data();
+    if (data && data.ProjectID) {
+        await touchProject(data.ProjectID);
+    }
+    clearDBCache();
+    return data;
 };
 
 export const deleteProjectFolder = async (folderId) => {
@@ -382,15 +487,31 @@ export const deleteProjectFolder = async (folderId) => {
     }
 
     // Phase 2: Safely destroy the folder metadata object itself
-    await deleteDoc(doc(firestore, 'folders', folderId));
+    const docRef = doc(firestore, 'folders', folderId);
+    const folderSnap = await getDoc(docRef);
+    let projectID = null;
+    if (folderSnap.exists()) {
+        projectID = folderSnap.data().ProjectID;
+    }
+
+    // PhaseSafely destroy the folder metadata object itself
+    await deleteDoc(docRef);
     clearDBCache();
+
+    if (projectID) {
+        await touchProject(projectID);
+    }
     return true;
 };
 
 export const movePhotosToFolder = async (photoIds, folderId) => {
     // If folderId is null, it removes them from any folders (back to general root gallery)
+    let lastPID = null;
     for (const pid of photoIds) {
         const docRef = doc(firestore, 'photos', pid);
+        const snap = await getDoc(docRef);
+        if (snap.exists()) lastPID = snap.data().ProjectID;
+
         if (folderId) {
             await updateDoc(docRef, { FolderID: folderId });
         } else {
@@ -398,6 +519,7 @@ export const movePhotosToFolder = async (photoIds, folderId) => {
         }
     }
     clearDBCache();
+    if (lastPID) await touchProject(lastPID);
     return true;
 };
 
@@ -419,6 +541,9 @@ export const addTodo = async (todoData) => {
         ...todoData
     };
     await setDoc(doc(firestore, 'todos', TodoID), newTodo);
+    if (todoData.ProjectID) {
+        await touchProject(todoData.ProjectID);
+    }
     return newTodo;
 };
 
@@ -428,13 +553,23 @@ export const toggleTodo = async (todoId) => {
     if (snap.exists()) {
         const t = snap.data();
         await updateDoc(docRef, { IsCompleted: !t.IsCompleted });
+        if (t.ProjectID) {
+            await touchProject(t.ProjectID);
+        }
         return { ...t, IsCompleted: !t.IsCompleted };
     }
     throw new Error("Todo not found");
 };
 
 export const deleteTodo = async (todoId) => {
-    await deleteDoc(doc(firestore, 'todos', todoId));
+    const docRef = doc(firestore, 'todos', todoId);
+    const snap = await getDoc(docRef);
+    let projectID = null;
+    if (snap.exists()) {
+        projectID = snap.data().ProjectID;
+    }
+    await deleteDoc(docRef);
+    if (projectID) await touchProject(projectID);
     return true;
 };
 

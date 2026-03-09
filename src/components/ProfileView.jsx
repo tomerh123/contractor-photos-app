@@ -134,7 +134,9 @@ const ProfileView = ({ navigateTo }) => {
             {/* Header */}
             <header style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '1rem 1.5rem', borderBottom: '1px solid var(--border)'
+                padding: '1rem 1.5rem', 
+                paddingTop: 'calc(1rem + env(safe-area-inset-top))',
+                borderBottom: '1px solid var(--border)'
             }}>
                 <button onClick={() => navigateTo('HOME')} style={{ background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: 0 }}>
                     <X size={26} />

@@ -33,7 +33,6 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
     const [selectedPhotoIds, setSelectedPhotoIds] = useState(new Set());
     const [showNewFolderModal, setShowNewFolderModal] = useState(false);
     const [newFolderName, setNewFolderName] = useState('');
-    const [editingFolder, setEditingFolder] = useState(null);
     const [showMoveModal, setShowMoveModal] = useState(false);
     const [deleteModalConfig, setDeleteModalConfig] = useState({ isOpen: false, type: null, folderId: null });
     const [showTagDropdown, setShowTagDropdown] = useState(false);
@@ -159,16 +158,6 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
         setShowNewFolderModal(false);
         setIsUploading(false);
         setActiveFolderId(newFolder.FolderID);
-    };
-
-    const handleRenameFolder = async () => {
-        if (!editingFolder || !newFolderName.trim()) return;
-        setIsUploading(true);
-        const updated = await db.updateProjectFolder(editingFolder.FolderID, newFolderName.trim());
-        setFolders(prev => prev.map(f => f.FolderID === updated.FolderID ? updated : f));
-        setEditingFolder(null);
-        setNewFolderName('');
-        setIsUploading(false);
     };
 
     const triggerDeleteFolder = (folderId) => {
@@ -423,83 +412,59 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                                         <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                             {folders.find(f => f.FolderID === activeFolderId)?.Name || 'Folder'}
                                         </span>
-                                        <button 
-                                            onClick={() => {
-                                                const f = folders.find(x => x.FolderID === activeFolderId);
-                                                if (f) {
-                                                    setEditingFolder(f);
-                                                    setNewFolderName(f.Name);
-                                                }
-                                            }}
-                                            style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)', padding: '5px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: '4px', cursor: 'pointer' }}
-                                        >
-                                            <Edit2 size={14} />
-                                        </button>
                                     </span>
                                 ) : 'Photo Gallery'}
                             </h3>
                         </div>
 
                         {/* Row 2: Actions */}
-                        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: '1.5rem', gap: '0.75rem' }}>
-                            {/* Left: New Room / Manage Tags / Delete Room */}
-                            {!isSelectionMode ? (
-                                <>
-                                    {activeFolderId ? (
-                                        <button
-                                            onClick={() => triggerDeleteFolder(activeFolderId)}
-                                            style={{ flex: 1, background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--danger)', padding: '12px 14px', borderRadius: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-                                        >
-                                            <Trash2 size={18} />
-                                            <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Delete Room</span>
-                                        </button>
-                                    ) : (
-                                        <>
-                                            <button
-                                                onClick={() => setShowNewFolderModal(true)}
-                                                style={{ flex: 1, minHeight: '74px', background: '#38bdf8', border: '1px solid #38bdf8', color: '#0f1115', padding: '10px 8px', borderRadius: '12px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-                                            >
-                                                <Plus size={18} color="#0f1115" strokeWidth={3} />
-                                                <span style={{ fontSize: '0.8rem', fontWeight: 800, textAlign: 'center', lineHeight: 1.2 }}>New<br/>Room</span>
-                                            </button>
-                                            <button
-                                                onClick={() => setShowManageTagsModal(true)}
-                                                style={{ flex: 1, minHeight: '74px', background: 'var(--primary-color)', border: '1px solid var(--primary-color)', color: '#0f1115', padding: '10px 8px', borderRadius: '12px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-                                            >
-                                                <TagIcon size={18} color="#0f1115" strokeWidth={3} />
-                                                <span style={{ fontSize: '0.8rem', fontWeight: 800, textAlign: 'center', lineHeight: 1.2 }}>Manage<br/>Tags</span>
-                                            </button>
-                                        </>
-                                    )}
-
-                                    {/* Select Button */}
-                                    {photos.length > 0 && (
-                                        <button
-                                            onClick={() => setIsSelectionMode(true)}
-                                            style={{ 
-                                                flex: activeFolderId ? 1 : 1, 
-                                                minHeight: activeFolderId ? 'auto' : '74px',
-                                                background: 'white', 
-                                                border: '1px solid white', 
-                                                color: '#0f1115', 
-                                                padding: activeFolderId ? '12px 14px' : '10px 8px', 
-                                                borderRadius: '12px', 
-                                                cursor: 'pointer', 
-                                                display: 'flex', 
-                                                flexDirection: activeFolderId ? 'row' : 'column', 
-                                                alignItems: 'center', 
-                                                justifyContent: 'center', 
-                                                gap: '6px' 
-                                            }}
-                                        >
-                                            <CheckSquare size={18} color="#0f1115" strokeWidth={3} />
-                                            <span style={{ fontSize: '0.8rem', fontWeight: 800, textAlign: 'center', lineHeight: 1.1 }}>
-                                                {activeFolderId ? 'Select Photos' : <>Select<br/>Photos</>}
-                                            </span>
-                                        </button>
-                                    )}
-                                </>
-                            ) : null}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', gap: '0.75rem' }}>
+                            {/* Left: New Room or Delete Room */}
+                            {!isSelectionMode && (
+                                activeFolderId ? (
+                                    <button
+                                        onClick={() => triggerDeleteFolder(activeFolderId)}
+                                        style={{ flex: 1, background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--danger)', padding: '8px 14px', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                                    >
+                                        <Trash2 size={18} />
+                                        <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Delete Room</span>
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={() => setShowNewFolderModal(true)}
+                                        style={{ flex: 1, minHeight: '74px', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.3)', color: '#38bdf8', padding: '10px 8px', borderRadius: '12px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                                    >
+                                        <Plus size={18} />
+                                        <span style={{ fontSize: '0.8rem', fontWeight: 600, textAlign: 'center', lineHeight: 1.2 }}>New<br/>Room</span>
+                                    </button>
+                                )
+                            )}
+                            
+                            {!isSelectionMode && isRoot && (
+                                <button
+                                    onClick={() => setShowManageTagsModal(true)}
+                                    style={{ flex: 1, minHeight: '74px', background: 'var(--primary-light)', border: '1px solid rgba(249, 115, 22, 0.3)', color: 'var(--primary-color)', padding: '10px 8px', borderRadius: '12px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                                >
+                                    <TagIcon size={18} />
+                                    <span style={{ fontSize: '0.8rem', fontWeight: 600, textAlign: 'center', lineHeight: 1.2 }}>Manage<br/>Tags</span>
+                                </button>
+                            )}
+                            {isSelectionMode && <div />}
+                            {/* Right: Select / Cancel */}
+                            {photos.length > 0 && (
+                                <button
+                                    onClick={() => {
+                                        if (isSelectionMode) setSelectedPhotoIds(new Set());
+                                        setIsSelectionMode(!isSelectionMode);
+                                    }}
+                                    style={{ flex: 1, minHeight: '74px', background: isSelectionMode ? 'var(--primary-color)' : 'var(--surface)', border: isSelectionMode ? 'none' : '1px solid var(--border)', color: isSelectionMode ? 'white' : 'var(--text-secondary)', padding: '10px 8px', borderRadius: '12px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                                >
+                                    {isSelectionMode ? <X size={18} /> : <CheckSquare size={18} />}
+                                    <span style={{ fontSize: '0.8rem', fontWeight: 600, textAlign: 'center', lineHeight: 1.1 }}>
+                                        {isSelectionMode ? 'Cancel' : (<span>Select<br/>Photos</span>)}
+                                    </span>
+                                </button>
+                            )}
                         </div>
 
                         {/* Dropdown Filter */}
@@ -609,33 +574,6 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                                             <div style={{ position: 'absolute', top: '8px', left: '8px', right: '8px', textAlign: 'center' }}>
                                                 <div style={{ color: 'white', fontSize: '0.85rem', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textShadow: '0 2px 4px rgba(0,0,0,0.9)' }}>{folder.Name}</div>
                                             </div>
-                                            
-                                            {/* Edit Button (Top Right) */}
-                                            <div 
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setEditingFolder(folder);
-                                                    setNewFolderName(folder.Name);
-                                                }}
-                                                style={{ 
-                                                    position: 'absolute', 
-                                                    top: '8px', 
-                                                    right: '8px', 
-                                                    zIndex: 10, 
-                                                    background: 'rgba(0,0,0,0.4)', 
-                                                    backdropFilter: 'blur(4px)',
-                                                    borderRadius: '50%', 
-                                                    width: '26px', 
-                                                    height: '26px', 
-                                                    display: 'flex', 
-                                                    alignItems: 'center', 
-                                                    justifyContent: 'center',
-                                                    border: '1px solid rgba(255,255,255,0.2)'
-                                                }}
-                                            >
-                                                <Edit2 size={12} color="white" />
-                                            </div>
-
                                             <div style={{ position: 'absolute', bottom: '8px', left: '8px', right: '8px' }}>
                                                 <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: '0.75rem', fontWeight: 500 }}>{folderPhotos.length} {folderPhotos.length === 1 ? 'photo' : 'photos'}</div>
                                             </div>
@@ -753,83 +691,44 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
             </div>
 
             {/* Contextual Multi-Select Bottom Bar */}
-            {isSelectionMode && (
+            {isSelectionMode ? (
                 <div style={{
                     position: 'fixed',
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    backgroundColor: 'rgba(28, 28, 30, 0.95)',
-                    backdropFilter: 'blur(10px)',
-                    padding: '16px 20px calc(16px + env(safe-area-inset-bottom))',
-                    borderTop: '1px solid var(--border)',
+                    bottom: 'calc(20px + env(safe-area-inset-bottom))',
+                    left: '20px',
+                    right: '20px',
+                    backgroundColor: 'var(--surface)',
+                    padding: '12px 20px',
+                    borderRadius: '16px',
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+                    border: '1px solid var(--border)',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
                     zIndex: 2000,
-                    animation: 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-                    boxShadow: '0 -4px 12px rgba(0,0,0,0.2)'
+                    animation: 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
                 }}>
-                    <span style={{ fontWeight: 600, fontSize: '1rem', color: 'white' }}>{selectedPhotoIds.size} Selected</span>
-                    <div style={{ display: 'flex', gap: '12px' }}>
+                    <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{selectedPhotoIds.size} Selected</span>
+                    <div style={{ display: 'flex', gap: '8px' }}>
                         <button
                             className="btn btn-primary"
                             disabled={selectedPhotoIds.size === 0}
                             onClick={() => setShowMoveModal(true)}
-                            style={{ 
-                                padding: '10px 20px', 
-                                fontSize: '0.9rem', 
-                                borderRadius: '10px',
-                                background: selectedPhotoIds.size > 0 ? 'var(--primary-color)' : 'rgba(255,255,255,0.05)',
-                                color: selectedPhotoIds.size > 0 ? 'white' : 'rgba(255,255,255,0.2)',
-                                border: 'none',
-                                fontWeight: 600
-                            }}
+                            style={{ padding: '0.6rem 1rem', fontSize: '0.85rem' }}
                         >
                             Move
                         </button>
                         <button
                             className="btn"
-                            onClick={() => {
-                                setSelectedPhotoIds(new Set());
-                                setIsSelectionMode(false);
-                            }}
-                            style={{ 
-                                padding: '10px 20px', 
-                                fontSize: '0.9rem', 
-                                color: 'white', 
-                                border: '1px solid var(--border)',
-                                borderRadius: '10px',
-                                background: 'transparent',
-                                fontWeight: 600
-                            }}
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            className="btn"
                             disabled={selectedPhotoIds.size === 0}
                             onClick={triggerDeleteSelected}
-                            style={{ 
-                                padding: '10px 20px', 
-                                fontSize: '0.9rem', 
-                                color: selectedPhotoIds.size > 0 ? '#ff453a' : 'rgba(255,255,255,0.2)', 
-                                border: '1px solid ' + (selectedPhotoIds.size > 0 ? '#ff453a' : 'rgba(255,255,255,0.1)'),
-                                borderRadius: '10px',
-                                background: 'transparent',
-                                fontWeight: 600,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                            }}
+                            style={{ padding: '0.6rem 1rem', fontSize: '0.85rem', color: 'var(--danger)', borderColor: 'var(--danger)' }}
                         >
-                            <Trash2 size={20} />
+                            Delete
                         </button>
                     </div>
                 </div>
-            )}
-
-            {!isSelectionMode && (
+            ) : (
                 <div className="floating-dock">
                     <button className="dock-btn main" onClick={() => navigateTo('CAMERA', projectId, null, null, activeFolderId)}><Camera size={26} /></button>
                     <div style={{ width: '1px', height: '30px', backgroundColor: 'var(--border)' }}></div>
@@ -896,87 +795,41 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                 </div>
             )}
 
-            {/* Rename Folder Modal */}
-            {editingFolder && (
-                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 4000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }} onClick={() => setEditingFolder(null)}>
-                    <div style={{ backgroundColor: 'var(--surface)', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '340px', boxShadow: '0 10px 40px rgba(0,0,0,0.5)' }} onClick={e => e.stopPropagation()}>
-                        <h3 style={{ margin: '0 0 16px 0' }}>Rename Room</h3>
-                        <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '12px' }}>Updating name for <strong>{editingFolder.Name}</strong></p>
-                        <input
-                            type="text"
-                            value={newFolderName}
-                            onChange={e => setNewFolderName(e.target.value)}
-                            placeholder="e.g. Master Suite"
-                            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--background)', color: 'var(--text-primary)', fontSize: '1rem', marginBottom: '20px' }}
-                            autoFocus
-                            onKeyDown={e => e.key === 'Enter' && handleRenameFolder()}
-                        />
-                        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                            <button className="btn" onClick={() => setEditingFolder(null)}>Cancel</button>
-                            <button className="btn btn-primary" onClick={handleRenameFolder} disabled={!newFolderName.trim()}>Save Changes</button>
+            {/* Move Photos Modal */}
+            {showMoveModal && (
+                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 4000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={() => setShowMoveModal(false)}>
+                    <div style={{ backgroundColor: 'var(--surface)', borderTopLeftRadius: '24px', borderTopRightRadius: '24px', padding: '24px', width: '100%', maxWidth: '500px', maxHeight: '80dvh', overflowY: 'auto', animation: 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }} onClick={e => e.stopPropagation()}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                            <h3 style={{ margin: 0 }}>Move {selectedPhotoIds.size} Photos</h3>
+                            <button onClick={() => setShowMoveModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)' }}><X size={24} /></button>
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <button
+                                onClick={() => handleMovePhotos(null)}
+                                style={{ width: '100%', padding: '16px', borderRadius: '12px', border: '1px solid var(--border)', backgroundColor: 'var(--background)', color: 'var(--text-primary)', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', textAlign: 'left' }}
+                            >
+                                <FolderOpen size={20} color="var(--text-secondary)" />
+                                <div>
+                                    <div style={{ fontWeight: 600 }}>Uncategorized Gallery</div>
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Remove from current room</div>
+                                </div>
+                            </button>
+
+                            {folders.map(f => (
+                                <button
+                                    key={f.FolderID}
+                                    onClick={() => handleMovePhotos(f.FolderID)}
+                                    style={{ width: '100%', padding: '16px', borderRadius: '12px', border: '1px solid var(--border)', backgroundColor: 'var(--background)', color: 'var(--text-primary)', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', textAlign: 'left' }}
+                                >
+                                    <Folder size={20} color="var(--primary-color)" />
+                                    <span style={{ fontWeight: 600 }}>{f.Name}</span>
+                                </button>
+                            ))}
                         </div>
                     </div>
                 </div>
             )}
-
-            {/* Move Photos Modal */}
-            {showMoveModal && (() => {
-                const selectedPhotosObjects = photos.filter(p => selectedPhotoIds.has(p.PhotoID));
-                const selectedFolderIds = new Set(selectedPhotosObjects.map(p => p.FolderID));
-                const isMultiFolder = selectedFolderIds.size > 1;
-                const singleSourceFolder = selectedFolderIds.size === 1 ? Array.from(selectedFolderIds)[0] : undefined;
-
-                return (
-                    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 4000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={() => setShowMoveModal(false)}>
-                        <div style={{ backgroundColor: 'var(--surface)', borderTopLeftRadius: '24px', borderTopRightRadius: '24px', padding: '24px', width: '100%', maxWidth: '500px', maxHeight: '80dvh', overflowY: 'auto', animation: 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }} onClick={e => e.stopPropagation()}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                                <h3 style={{ margin: 0 }}>Move {selectedPhotoIds.size} Photos</h3>
-                                <button onClick={() => setShowMoveModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)' }}><X size={24} /></button>
-                            </div>
-
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                {/* Show Uncategorized Gallery option if: 
-                                    1. Photos are from multiple folders 
-                                    2. Photos are from a single room (that is not Root) 
-                                */}
-                                {(isMultiFolder || (selectedFolderIds.size === 1 && singleSourceFolder !== null)) && (
-                                    <button
-                                        onClick={() => handleMovePhotos(null)}
-                                        style={{ width: '100%', padding: '16px', borderRadius: '12px', border: '1px solid var(--border)', backgroundColor: 'var(--background)', color: 'var(--text-primary)', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', textAlign: 'left' }}
-                                    >
-                                        <FolderOpen size={20} color="var(--text-secondary)" />
-                                        <div>
-                                            <div style={{ fontWeight: 600 }}>Uncategorized Gallery</div>
-                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Remove from current room</div>
-                                        </div>
-                                    </button>
-                                )}
-
-                                {/* Only show other rooms if photos are all from ONE source */}
-                                {!isMultiFolder && folders
-                                    .filter(f => f.FolderID !== singleSourceFolder)
-                                    .map(f => (
-                                        <button
-                                            key={f.FolderID}
-                                            onClick={() => handleMovePhotos(f.FolderID)}
-                                            style={{ width: '100%', padding: '16px', borderRadius: '12px', border: '1px solid var(--border)', backgroundColor: 'var(--background)', color: 'var(--text-primary)', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', textAlign: 'left' }}
-                                        >
-                                            <Folder size={20} color="var(--primary-color)" />
-                                            <span style={{ fontWeight: 600 }}>{f.Name}</span>
-                                        </button>
-                                    ))
-                                }
-
-                                {isMultiFolder && (
-                                    <p style={{ margin: '10px 0', fontSize: '0.85rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
-                                        Photos from multiple rooms can only be moved to the main gallery.
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                );
-            })()}
 
             {/* Custom Delete Confirmation Modal */}
             {deleteModalConfig.isOpen && (
@@ -1034,14 +887,13 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                                             display: 'flex', 
                                             alignItems: 'center', 
                                             justifyContent: 'space-between', 
-                                            gap: '8px',
                                             padding: '10px 14px', 
                                             backgroundColor: 'var(--surface)', 
                                             borderRadius: '10px',
                                             border: '1px solid var(--border)'
                                         }}>
                                             {tagToRename === tag ? (
-                                                <>
+                                                <div style={{ display: 'flex', gap: '8px', flex: 1, alignItems: 'center' }}>
                                                     <input 
                                                         autoFocus
                                                         value={newTagNameInput}
@@ -1069,8 +921,7 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                                                             color: 'white',
                                                             borderRadius: '6px',
                                                             padding: '4px 8px',
-                                                            fontSize: '0.9rem',
-                                                            minWidth: 0
+                                                            fontSize: '0.9rem'
                                                         }}
                                                     />
                                                     <button 
@@ -1084,11 +935,11 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                                                             setIsUploading(false);
                                                         }}
                                                         className="btn btn-primary" 
-                                                        style={{ padding: '8px 12px', fontSize: '0.8rem', flexShrink: 0 }}
+                                                        style={{ padding: '4px 8px', fontSize: '0.8rem' }}
                                                     >
                                                         Save
                                                     </button>
-                                                </>
+                                                </div>
                                             ) : (
                                                 <>
                                                     <span style={{ fontWeight: 600, color: 'var(--primary-color)' }}>#{tag}</span>
@@ -1186,8 +1037,7 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                                         color: 'white',
                                         borderRadius: '8px',
                                         padding: '8px 12px',
-                                        fontSize: '0.9rem',
-                                        minWidth: 0
+                                        fontSize: '0.9rem'
                                     }}
                                 />
                                 <button 
@@ -1210,7 +1060,7 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                                         setIsUploading(false);
                                     }}
                                     className="btn btn-primary" 
-                                    style={{ padding: '8px 16px', flexShrink: 0 }}
+                                    style={{ padding: '8px 16px' }}
                                 >
                                     Add
                                 </button>

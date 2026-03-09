@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import LZString from 'lz-string';
 import { Camera } from 'lucide-react';
+import LoadingSpinner from './LoadingSpinner';
 
 const SharedProjectView = ({ payload }) => {
     const [project, setProject] = useState(null);
@@ -44,11 +45,7 @@ const SharedProjectView = ({ payload }) => {
     }, [payload]);
 
     if (loading) {
-        return (
-            <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f9fafb' }}>
-                <p style={{ color: '#6b7280' }}>Loading project gallery...</p>
-            </div>
-        );
+        return <LoadingSpinner message="Loading project gallery..." padding="2rem" />;
     }
 
     if (!project) {

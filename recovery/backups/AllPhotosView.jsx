@@ -115,34 +115,51 @@ const AllPhotosView = ({ navigateTo, initialPhotoId }) => {
 
     return (
         <div className="project-detail-view">
-            <header className="header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0' }}>
-                <div style={{ width: '70px', display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
-                    <button 
-                        className="btn" 
-                        onClick={() => navigateTo('HOME')} 
-                        style={{ 
-                            background: 'var(--surface-active)', 
-                            border: '1px solid var(--border)', 
-                            padding: '0.5rem', 
-                            borderRadius: '50%', 
-                            width: '40px', 
-                            height: '40px', 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'center', 
-                            flexShrink: 0 
-                        }}
-                    >
-                        <ArrowLeft size={20} />
-                    </button>
-                </div>
+            <header className="header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+                <button 
+                    className="btn" 
+                    onClick={() => navigateTo('HOME')} 
+                    style={{ 
+                        background: 'var(--surface-active)', 
+                        border: '1px solid var(--border)', 
+                        padding: '0.5rem', 
+                        borderRadius: '50%', 
+                        width: '40px', 
+                        height: '40px', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center', 
+                        flexShrink: 0 
+                    }}
+                >
+                    <ArrowLeft size={20} />
+                </button>
                 <div style={{ flex: 1, textAlign: 'center', minWidth: 0 }}>
                     <h2 style={{ fontSize: '1.2rem', margin: 0 }}>All Photos</h2>
                 </div>
-                <div style={{ width: '70px' }}></div>
+                <button
+                    onClick={() => setSortOrder(sortOrder === 'newest' ? 'oldest' : 'newest')}
+                    style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--text-primary)',
+                        padding: '0.5rem',
+                        cursor: 'pointer',
+                        fontSize: '0.9rem',
+                        fontWeight: '500',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        flexShrink: 0,
+                        width: '70px',
+                        justifyContent: 'flex-end'
+                    }}
+                >
+                    {sortOrder === 'newest' ? <ArrowUp size={16} /> : <ArrowDown size={16} />}
+                </button>
             </header>
 
-            <div className="hide-scrollbar" style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', paddingBottom: 'var(--dock-clearance)', WebkitOverflowScrolling: 'touch' }}>
+            <div className="content-pad hide-scrollbar" style={{ flex: 1, overflowY: 'auto', paddingBottom: 'var(--dock-clearance)', WebkitOverflowScrolling: 'touch' }}>
                 {photos.length === 0 ? (
                     <div style={{ padding: '2rem', textAlign: 'center', backgroundColor: 'var(--surface)', borderRadius: '12px', color: 'var(--text-secondary)' }}>
                         <p>No photos yet.</p>
@@ -152,7 +169,7 @@ const AllPhotosView = ({ navigateTo, initialPhotoId }) => {
                     <>
                         {/* Project Filters */}
                         {uniqueProjects.length > 0 && (
-                            <div style={{ position: 'relative', marginBottom: '1rem', padding: '0 1.5rem', marginTop: '1.5rem' }}>
+                            <div style={{ position: 'relative', marginBottom: '1rem', padding: '0 1.5rem', marginTop: '1rem' }}>
                                 <button
                                     onClick={() => setShowProjectDropdown(v => v === 'project' ? null : 'project')}
                                     style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '10px', padding: '8px 14px', cursor: 'pointer', color: 'var(--text-primary)', fontSize: '0.9rem', fontWeight: 600, width: '100%', justifyContent: 'space-between' }}
@@ -252,8 +269,7 @@ const AllPhotosView = ({ navigateTo, initialPhotoId }) => {
                             display: 'grid',
                             gridTemplateColumns: 'repeat(3, 1fr)',
                             gap: '2px', // Instagram style tight grid
-                            margin: '0',
-                            width: '100%'
+                            margin: '0 -1.5rem' // Break out of container padding for edge-to-edge
                         }}>
                             {displayedPhotos.map((photo, idx) => (
                                 <div key={photo.PhotoID} className="aspect-square bg-gray-200 cursor-pointer overflow-hidden" onClick={() => openPhotoViewer(photo)} style={{ position: 'relative', aspectRatio: '1/1', backgroundColor: 'var(--surface)' }}>

@@ -5,7 +5,7 @@ import { useApp } from '../AppContext';
 import { Trash2, Edit2, Star, MapPin, RefreshCcw } from 'lucide-react';
 import AddressAutocomplete from './AddressAutocomplete';
 
-const ProjectCard = ({ project, navigateTo, hideLocation = false }) => {
+const ProjectCard = ({ project, navigateTo, hideLocation = false, hideCreatedDate = false }) => {
     const [thumbnail, setThumbnail] = useState(null);
     const [openTodosCount, setOpenTodosCount] = useState(0);
     const [isEditing, setIsEditing] = useState(false);
@@ -40,6 +40,27 @@ const ProjectCard = ({ project, navigateTo, hideLocation = false }) => {
         };
         fetchData();
     }, [project.ProjectID]);
+
+    const formatModifiedDate = (dateString) => {
+        if (!dateString) return '';
+        const d = new Date(dateString);
+        const now = new Date();
+        
+        // Use a more robust today/yesterday check
+        const isToday = d.toDateString() === now.toDateString();
+        const yesterday = new Date(now);
+        yesterday.setDate(now.getDate() - 1);
+        const isYesterday = d.toDateString() === yesterday.toDateString();
+
+        const timeStr = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase();
+
+        if (isToday) return `Modified Today at ${timeStr}`;
+        if (isYesterday) return `Modified Yesterday at ${timeStr}`;
+
+        return `Modified ${d.toLocaleDateString([], { month: 'short', day: 'numeric' })} at ${timeStr}`;
+    };
+
+    const lastModifiedTime = project.UpdatedAt || project.CreatedAt;
 
     return (
         <div
@@ -92,9 +113,39 @@ const ProjectCard = ({ project, navigateTo, hideLocation = false }) => {
                         <MapPin size={12} /> {project.Location || 'No location set'}
                     </div>
                 )}
-                <div style={{ marginTop: '4px', color: 'rgba(255,255,255,0.6)', fontSize: '0.75rem' }}>
-                    Created {new Date(project.CreatedAt).toLocaleDateString()}
+                
+                <div style={{ 
+                    marginTop: '6px', 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'flex-end',
+                    color: 'rgba(255,255,255,0.9)', 
+                    fontSize: '0.75rem',
+                    fontWeight: 500
+                }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        {!hideCreatedDate && (
+                            <div style={{ fontWeight: 600 }}>Created {new Date(project.CreatedAt).toLocaleDateString()}</div>
+                        )}
+                        {hideLocation && lastModifiedTime && (
+                            <div style={{ color: 'white', fontWeight: 600 }}>
+                                {formatModifiedDate(lastModifiedTime)}
+                            </div>
+                        )}
+                    </div>
+                    
+                    {!hideLocation && lastModifiedTime && (
+                        <div style={{ 
+                            color: 'white', 
+                            fontWeight: 600,
+                            paddingLeft: '1rem',
+                            textAlign: 'right'
+                        }}>
+                            {formatModifiedDate(lastModifiedTime)}
+                        </div>
+                    )}
                 </div>
+
                 {project.ArchivedAt && (
                     <div style={{ marginTop: '0.8rem', fontSize: '0.85rem', color: '#ef4444', fontWeight: 600, textAlign: 'center', backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: '0.4rem', borderRadius: '8px', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
                         Archived {Math.floor((new Date() - new Date(project.ArchivedAt)) / (1000 * 60 * 60 * 24))} days ago
@@ -140,12 +191,12 @@ const ProjectCard = ({ project, navigateTo, hideLocation = false }) => {
                     </div>
                 ) : (
                     <>
-                        {/* Action Buttons (Centered Top) */}
-                        <div style={{ position: 'absolute', top: '1rem', left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: '1.4rem', zIndex: 10 }}>
+                        {/* Left Action Button (Favorite) */}
+                        <div style={{ position: 'absolute', top: '1rem', left: '1rem', zIndex: 10 }}>
                             <button
                                 onClick={async (e) => {
                                     e.stopPropagation();
-                                    await db.updateProject(project.ProjectID, { IsFavorite: !project.IsFavorite });
+                                    await db.updateProject(project.ProjectID, { IsFavorite: !project.IsFavorite }, false);
                                     refreshProjects();
                                 }}
                                 style={{
@@ -158,6 +209,10 @@ const ProjectCard = ({ project, navigateTo, hideLocation = false }) => {
                             >
                                 <Star size={16} fill={project.IsFavorite ? "#f59e0b" : "none"} />
                             </button>
+                        </div>
+
+                        {/* Right Action Buttons (Edit/Delete) */}
+                        <div style={{ position: 'absolute', top: '1rem', right: '1rem', display: 'flex', gap: '0.6rem', zIndex: 10 }}>
                             <button
                                 onClick={(e) => { e.stopPropagation(); setIsEditing(true); }}
                                 style={{

@@ -4,6 +4,7 @@ import { auth, db } from '../firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { useApp } from '../AppContext';
+import LoadingSpinner from './LoadingSpinner';
 
 const COMMON_TRADES = [
     'General Contractor',
@@ -25,26 +26,33 @@ const COMMON_TRADES = [
 const OnboardingView = () => {
     const { refreshProfile } = useApp();
 
-    const [step, setStep] = useState(1);
-    const [isLogin, setIsLogin] = useState(true);
+    const [step, setStep] = useState(() => {
+        const pending = sessionStorage.getItem('pendingProfileStep');
+        if (pending) return parseInt(pending);
+        return 1;
+    });
+    const [isLogin, setIsLogin] = useState(() => {
+        const pending = sessionStorage.getItem('pendingProfileStep');
+        if (pending) return false;
+        return true;
+    });
 
     // Step 1
     const [phone, setPhone] = useState('');
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
-
-    // Step 2
     const [name, setName] = useState('');
-    const [email, setEmail] = useState('');
 
-    // Step 3
+    // Step 2 (Signup)
+    const [email, setEmail] = useState('');
     const [company, setCompany] = useState('');
     const [trade, setTrade] = useState('');
 
     const [isProcessing, setIsProcessing] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
 
-    // Smart handling of orphaned auth accounts and destructive AppContext loading re-mounts
+    // ... useEffect remains same ...
     React.useEffect(() => {
         let hasChecked = false;
         const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -53,7 +61,6 @@ const OnboardingView = () => {
 
                 const pendingStep = sessionStorage.getItem('pendingProfileStep');
                 if (pendingStep === '2') {
-                    // They just authenticated and AppContext ripped the component away. Restore them to Step 2.
                     sessionStorage.removeItem('pendingProfileStep');
                     setStep(2);
                     setIsLogin(false);
@@ -63,13 +70,11 @@ const OnboardingView = () => {
                         setPhone(extractedPhone);
                     }
                 }
-                // If they are an orphaned session that loaded the app fresh,
-                // do NOT force them to Step 2. Let them start at Step 1 (Login).
-                // They can seamlessly authenticate into their ghost account to reach Step 2 locally.
             }
         });
         return () => unsubscribe();
     }, []);
+
     const generatePseudoEmail = (phoneNumber) => {
         const raw = phoneNumber.replace(/\D/g, '');
         return `${raw}@contractorphotos.app`;
@@ -86,41 +91,40 @@ const OnboardingView = () => {
                 if (rawPhone.length < 10) throw new Error("Please enter a valid 10-digit phone number.");
                 if (password.length < 6) throw new Error("Password must be at least 6 characters.");
 
-                const pseudoEmail = generatePseudoEmail(phone);
-
-                if (isLogin) {
-                    // Logic for Login
-                    sessionStorage.setItem('pendingProfileStep', '2');
-                    await signInWithEmailAndPassword(auth, pseudoEmail, password);
-                } else {
-                    // Logic for Signup Step 1
-                    try {
-                        sessionStorage.setItem('pendingProfileStep', '2');
-                        await createUserWithEmailAndPassword(auth, pseudoEmail, password);
-                    } catch (err) {
-                        sessionStorage.removeItem('pendingProfileStep');
-                        if (err.code === 'auth/email-already-in-use') {
-                            throw new Error("This phone number is already registered. Please log in.");
-                        }
-                        throw err;
-                    }
+                if (!isLogin) {
+                    if (!name.trim()) throw new Error("Please enter your full name.");
+                    if (password !== confirmPassword) throw new Error("Passwords do not match.");
+                    
+                    // SIGNUP: Just advance locally. Do NOT create auth account yet.
+                    setStep(2);
+                    return;
                 }
 
-                // Authentication succeeded! 
-                // For new users, AppContext will unmount this component right now. This local state update may be ignored.
-                // For existing orphaned users, AppContext will NOT unmount us! We must explicitly advance them locally.
-                setStep(2);
-                setIsLogin(false);
+                // LOGIN: Immediate authentication
+                const pseudoEmail = generatePseudoEmail(phone);
+                await signInWithEmailAndPassword(auth, pseudoEmail, password);
+                
+                // For existing orphaned users, advancement might not be automatic
+                await refreshProfile(auth.currentUser.uid);
             }
             else if (step === 2) {
-                if (!name.trim()) throw new Error("Please enter your full name.");
-                setStep(3); // Advance to collect trade
-            }
-            else if (step === 3) {
                 if (!trade) throw new Error("Please select your primary trade.");
 
-                const user = auth.currentUser;
-                if (!user) throw new Error("Authentication lost. Please restart.");
+                // ATOMIC SIGNUP: Create both Auth + Firestore profile now
+                const pseudoEmail = generatePseudoEmail(phone);
+                let user;
+                
+                try {
+                    const userCredential = await createUserWithEmailAndPassword(auth, pseudoEmail, password);
+                    user = userCredential.user;
+                } catch (err) {
+                    if (err.code === 'auth/email-already-in-use') {
+                        throw new Error("This phone number is already registered. Please go back and log in.");
+                    }
+                    throw err;
+                }
+
+                if (!user) throw new Error("Authentication failed. Please try again.");
 
                 // Save profile to Firestore
                 await setDoc(doc(db, 'users', user.uid), {
@@ -133,7 +137,7 @@ const OnboardingView = () => {
                     CreatedAt: new Date().toISOString()
                 });
 
-                // Manually trigger the app context to realize the profile is ready!
+                sessionStorage.removeItem('pendingProfileStep');
                 await refreshProfile(user.uid);
             }
         } catch (error) {
@@ -178,13 +182,13 @@ const OnboardingView = () => {
                         </button>
                     )}
                     <h1 style={{ fontSize: '1.5rem', margin: '0 0 0.5rem' }}>
-                        {isLogin ? 'Welcome Back' : (step === 1 ? 'Create Account' : step === 2 ? 'Your Details' : 'Almost Done')}
+                        {isLogin ? 'Welcome Back' : (step === 1 ? 'Create Account' : 'Almost Done')}
                     </h1>
 
                     {/* Progress indicators for signup */}
                     {!isLogin && (
                         <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '1rem' }}>
-                            {[1, 2, 3].map(s => (
+                            {[1, 2].map(s => (
                                 <div key={s} style={{
                                     height: '6px',
                                     width: '30px',
@@ -207,6 +211,20 @@ const OnboardingView = () => {
 
                     {step === 1 && (
                         <>
+                            {!isLogin && (
+                                <div style={{ position: 'relative' }}>
+                                    <User size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
+                                    <input
+                                        type="text"
+                                        value={name}
+                                        onChange={e => setName(e.target.value)}
+                                        placeholder="Full Name"
+                                        required
+                                        style={{ width: '100%', padding: '1rem 1rem 1rem 2.8rem', backgroundColor: 'var(--background)', color: 'white', border: '1px solid var(--border)', borderRadius: '12px', fontSize: '1.05rem', outline: 'none' }}
+                                    />
+                                </div>
+                            )}
+
                             <div style={{ position: 'relative' }}>
                                 <Phone size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
                                 <input
@@ -249,24 +267,27 @@ const OnboardingView = () => {
                                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                 </button>
                             </div>
+
+                            {!isLogin && (
+                                <div style={{ position: 'relative' }}>
+                                    <Lock size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
+                                    <input
+                                        type={showPassword ? 'text' : 'password'}
+                                        value={confirmPassword}
+                                        onChange={e => setConfirmPassword(e.target.value)}
+                                        placeholder="Confirm Password"
+                                        required
+                                        minLength={6}
+                                        autoComplete="off"
+                                        style={{ width: '100%', padding: '1rem 2.8rem 1rem 2.8rem', backgroundColor: 'var(--background)', color: 'white', border: '1px solid var(--border)', borderRadius: '12px', fontSize: '1.05rem', outline: 'none' }}
+                                    />
+                                </div>
+                            )}
                         </>
                     )}
 
                     {step === 2 && (
-                        <div style={{ animation: 'fadeIn 0.4s' }}>
-                            <div style={{ position: 'relative', marginBottom: '1.2rem' }}>
-                                <User size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
-                                <input
-                                    type="text"
-                                    value={name}
-                                    onChange={e => setName(e.target.value)}
-                                    placeholder="Full Name"
-                                    required
-                                    autoFocus
-                                    style={{ width: '100%', padding: '1rem 1rem 1rem 2.8rem', backgroundColor: 'var(--background)', color: 'white', border: '1px solid var(--border)', borderRadius: '12px', fontSize: '1.05rem', outline: 'none' }}
-                                />
-                            </div>
-
+                        <div style={{ animation: 'fadeIn 0.4s', display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
                             <div style={{ position: 'relative' }}>
                                 <Mail size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
                                 <input
@@ -276,23 +297,15 @@ const OnboardingView = () => {
                                     placeholder="Email Address (Optional)"
                                     style={{ width: '100%', padding: '1rem 1rem 1rem 2.8rem', backgroundColor: 'var(--background)', color: 'white', border: '1px solid var(--border)', borderRadius: '12px', fontSize: '1.05rem', outline: 'none' }}
                                 />
-                                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '6px', display: 'block', paddingLeft: '4px' }}>
-                                    Helpful if you ever need to recover your account.
-                                </span>
                             </div>
-                        </div>
-                    )}
 
-                    {step === 3 && (
-                        <div style={{ animation: 'fadeIn 0.4s' }}>
-                            <div style={{ position: 'relative', marginBottom: '1.2rem' }}>
+                            <div style={{ position: 'relative' }}>
                                 <Building size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
                                 <input
                                     type="text"
                                     value={company}
                                     onChange={e => setCompany(e.target.value)}
                                     placeholder="Company Name (Optional)"
-                                    autoFocus
                                     style={{ width: '100%', padding: '1rem 1rem 1rem 2.8rem', backgroundColor: 'var(--background)', color: 'white', border: '1px solid var(--border)', borderRadius: '12px', fontSize: '1.05rem', outline: 'none' }}
                                 />
                             </div>
@@ -318,12 +331,25 @@ const OnboardingView = () => {
                         type="submit"
                         className="btn btn-primary"
                         disabled={isProcessing}
-                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '1rem', fontWeight: 'bold', fontSize: '1.05rem', marginTop: '0.5rem', borderRadius: '12px' }}
+                        style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            gap: '8px', 
+                            padding: '1rem', 
+                            fontWeight: 'bold', 
+                            fontSize: '1.05rem', 
+                            marginTop: '0.5rem', 
+                            borderRadius: '12px',
+                            minHeight: '56px' // Prevent height jump
+                        }}
                     >
-                        {isProcessing ? 'Processing...' : (
-                            isLogin ? 'Log In' : (step === 3 ? 'Complete Setup' : 'Continue')
+                        {isProcessing ? (
+                            <LoadingSpinner fullScreen={false} size="20px" />
+                        ) : (
+                            isLogin ? 'Log In' : (step === 2 ? 'Complete Setup' : 'Continue')
                         )}
-                        {!isProcessing && !isLogin && step < 3 && <ArrowRight size={18} />}
+                        {!isProcessing && !isLogin && step < 2 && <ArrowRight size={18} />}
                     </button>
 
                     {step === 1 && (

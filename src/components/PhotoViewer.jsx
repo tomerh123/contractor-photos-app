@@ -39,7 +39,7 @@ const ZoomableSlide = ({ photo, index, swiperRef }) => {
     );
 };
 
-const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes, onDelete, disableAnimation = false, getFolderName }) => {
+const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes, onDelete, disableAnimation = false, getFolderName, getProjectName }) => {
     const [currentIndex, setCurrentIndex] = useState(initialIndex || 0);
     const [showUI, setShowUI] = useState(true);
     const [isEditingNotes, setIsEditingNotes] = useState(false);
@@ -90,6 +90,25 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
 
     const handleDelete = () => {
         setShowDeleteModal(true);
+    };
+
+    const confirmDelete = async () => {
+        setIsDeleting(true);
+        try {
+            await onDelete(currentPhoto.PhotoID);
+            setIsDeleting(false);
+            setShowDeleteModal(false);
+            // If we deleted the last photo, the parent usually handles the view closure, 
+            // but we adjust index here for internal swiper stability if multiple remain.
+            if (currentIndex >= photos.length - 1 && currentIndex > 0) {
+                setCurrentIndex(currentIndex - 1);
+            }
+        } catch (err) {
+            console.error("Delete failed", err);
+            setIsDeleting(false);
+            setShowDeleteModal(false);
+            alert("Could not delete photo.");
+        }
     };
 
     const handleDownload = async () => {
@@ -305,6 +324,29 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
                 </div>
             </header>
 
+            {/* Top Left Project Name Overlay (matches notes style) */}
+            {showUI && getProjectName && getProjectName(currentPhoto.ProjectID) && (
+                <div style={{
+                    position: 'absolute',
+                    top: 'calc(env(safe-area-inset-top) + 3.8rem)',
+                    left: '1rem',
+                    zIndex: 101,
+                    color: 'rgba(255,255,255,0.85)',
+                    fontSize: '0.85rem',
+                    fontWeight: '500',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxWidth: '60%',
+                    textShadow: '0 1px 3px rgba(0,0,0,0.6)',
+                    opacity: showUI ? 1 : 0,
+                    transition: 'opacity 0.25s ease',
+                    pointerEvents: 'none'
+                }}>
+                    {getProjectName(currentPhoto.ProjectID)}
+                </div>
+            )}
+
             {/* Image Container using Swiper.js */}
             <div
                 onClick={toggleUI}
@@ -352,24 +394,26 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
                 )}
             </div>
 
-            {/* Metadata overlay - in the black space below the photo */}
+            {/* Metadata overlay - perfectly centered between photo and bottom bar */}
             {showUI && (currentPhoto.FolderID || (currentPhoto.Tags && currentPhoto.Tags.length > 0) || currentPhoto.Notes) && (
                 <div style={{
                     position: 'absolute',
-                    bottom: '120px',
+                    bottom: 'calc(65px + env(safe-area-inset-bottom))', // Shifted up 20px for perfect centering
+                    height: 'calc(180px - (65px + env(safe-area-inset-bottom)))', // Exact visible gap
                     left: 0,
                     right: 0,
                     zIndex: 49,
-                    padding: '0.5rem 1rem',
+                    padding: '0 1rem',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
-                    gap: '0.4rem',
+                    justifyContent: 'center',
+                    gap: '1.2rem',
                     opacity: showUI ? 1 : 0,
                     transition: 'opacity 0.2s ease',
-                    pointerEvents: 'none',
+                    pointerEvents: 'none'
                 }}>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '0.35rem' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '0.4rem' }}>
                         {currentPhoto.FolderID && getFolderName && getFolderName(currentPhoto.FolderID) && (
                             <span style={{ backgroundColor: '#0ea5e9', color: 'white', padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 }}>
                                 {getFolderName(currentPhoto.FolderID)}
@@ -382,7 +426,7 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
                         ))}
                     </div>
                     {currentPhoto.Notes && (
-                        <p style={{ margin: 0, color: 'rgba(255,255,255,0.85)', fontSize: '0.8rem', textAlign: 'center', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>{currentPhoto.Notes}</p>
+                        <p style={{ margin: 0, color: 'rgba(255,255,255,0.85)', fontSize: '0.85rem', textAlign: 'center', lineHeight: '1.5', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>{currentPhoto.Notes}</p>
                     )}
                 </div>
             )}
@@ -409,7 +453,11 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
                 {isEditingNotes ? (
                     <div style={{ padding: '1rem' }}>
                         <div style={{ marginBottom: '1rem' }}>
-                            <TagSelector selectedTags={selectedTags} onTagsChange={setSelectedTags} />
+                            <TagSelector 
+                                selectedTags={selectedTags} 
+                                onTagsChange={setSelectedTags} 
+                                projectId={currentPhoto?.ProjectID}
+                            />
                         </div>
                         <textarea
                             value={notesText}
@@ -437,30 +485,30 @@ const PhotoViewer = ({ photos, initialIndex, onClose, onAnnotate, onUpdateNotes,
                         </div>
                     </div>
                 ) : (
-                    <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', padding: '0.5rem 1rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', padding: '0.35rem 1rem' }}>
                         <button
                             onClick={handleDelete}
                             disabled={isDeleting}
-                            style={{ background: 'transparent', border: 'none', color: '#ef4444', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem', cursor: 'pointer', opacity: isDeleting ? 0.5 : 1, padding: '0.3rem 0.75rem' }}
+                            style={{ background: 'transparent', border: 'none', color: '#ef4444', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.15rem', cursor: 'pointer', opacity: isDeleting ? 0.5 : 1, padding: '0.3rem 0.75rem' }}
                         >
-                            <Trash2 size={22} />
-                            <span style={{ fontSize: '0.7rem', fontWeight: 500 }}>Delete</span>
+                            <Trash2 size={20} />
+                            <span style={{ fontSize: '0.65rem', fontWeight: 500 }}>Delete</span>
                         </button>
                         <button
                             onClick={() => setIsEditingNotes(true)}
-                            style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem', cursor: 'pointer', padding: '0.3rem 0.75rem' }}
+                            style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.15rem', cursor: 'pointer', padding: '0.3rem 0.75rem' }}
                         >
-                            <MessageSquare size={22} />
-                            <span style={{ fontSize: '0.7rem', fontWeight: 500 }}>Add Note</span>
+                            <MessageSquare size={20} />
+                            <span style={{ fontSize: '0.65rem', fontWeight: 500 }}>Add Note</span>
                         </button>
                         {currentPhoto.Source !== 'gallery' && (
                             <button
                                 onClick={handleDownload}
                                 disabled={isDownloading}
-                                style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem', cursor: 'pointer', opacity: isDownloading ? 0.5 : 1, padding: '0.3rem 0.75rem' }}
+                                style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.15rem', cursor: 'pointer', opacity: isDownloading ? 0.5 : 1, padding: '0.3rem 0.75rem' }}
                             >
-                                <Download size={22} />
-                                <span style={{ fontSize: '0.7rem', fontWeight: 500 }}>{isDownloading ? 'Saving...' : 'Save'}</span>
+                                <Download size={20} />
+                                <span style={{ fontSize: '0.65rem', fontWeight: 500 }}>{isDownloading ? 'Saving...' : 'Save'}</span>
                             </button>
                         )}
                     </div>

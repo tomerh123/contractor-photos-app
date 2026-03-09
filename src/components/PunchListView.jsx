@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import * as db from '../db';
 import { Plus, CheckCircle2, Circle, Trash2 } from 'lucide-react';
+import LoadingSpinner from './LoadingSpinner';
 
 const PunchListView = ({ projectId }) => {
     const [todos, setTodos] = useState([]);
@@ -57,7 +58,7 @@ const PunchListView = ({ projectId }) => {
     });
 
     if (loading) {
-        return <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading punch list...</div>;
+        return <LoadingSpinner fullScreen={false} message="Loading punch list..." padding="2rem" />;
     }
 
     return (

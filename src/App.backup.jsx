@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { AppProvider } from './AppContext';
 import ProjectList from './components/ProjectList';
 import ProjectDetail from './components/ProjectDetail';
@@ -12,6 +11,7 @@ import PlaceholderView from './components/PlaceholderView';
 import SharedProjectView from './components/SharedProjectView';
 import MyMarkupsView from './components/MyMarkupsView';
 import OnboardingView from './components/OnboardingView';
+import LoadingSpinner from './components/LoadingSpinner';
 import { useApp } from './AppContext';
 
 function MainRoutes() {
@@ -87,11 +87,7 @@ function MainRoutes() {
     const { currentUser, loading } = useApp();
 
     if (loading) {
-        return (
-            <div style={{ height: '100dvh', backgroundColor: 'var(--background)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                <div style={{ width: '40px', height: '40px', border: '4px solid var(--border)', borderTopColor: 'var(--primary-color)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-            </div>
-        );
+        return <LoadingSpinner />;
     }
 
     if (!currentUser && currentView !== 'SHARED_VIEW') {
@@ -101,66 +97,49 @@ function MainRoutes() {
     const isOverlayView = ['MARKUP', 'CAMERA'].includes(currentView);
     const underlyingView = isOverlayView ? markupReturnView : currentView;
 
-    const variants = {
-        enter: (direction) => ({
-            x: direction === 'push' ? '100%' : '-100%',
-            opacity: 1,
-            zIndex: 1
-        }),
-        center: {
-            x: 0,
-            opacity: 1,
-            zIndex: 1
-        },
-        exit: (direction) => ({
-            x: direction === 'push' ? '-30%' : '100%',
-            opacity: direction === 'push' ? 0.7 : 1,
-            zIndex: 0
-        })
+    const renderView = () => {
+        switch (underlyingView) {
+            case 'HOME':
+                return <ProjectList navigateTo={navigateTo} />;
+            case 'ALL_PROJECTS':
+                return <AllProjectsView navigateTo={navigateTo} />;
+            case 'PROJECT_DETAIL':
+                return <ProjectDetail projectId={selectedProjectId} navigateTo={navigateTo} initialPhotoId={editingPhotoId} returnView={projectDetailReturnView} />;
+            case 'RECENT_PHOTOS':
+                return <AllPhotosView navigateTo={navigateTo} initialPhotoId={editingPhotoId} />;
+            case 'MY_MARKUPS':
+                return <MyMarkupsView navigateTo={navigateTo} initialPhotoId={editingPhotoId} />;
+            case 'SETTINGS':
+                return <PlaceholderView title="Settings" type="settings" navigateTo={navigateTo} returnView={settingsReturnView} />;
+            case 'PROFILE':
+                return <ProfileView navigateTo={navigateTo} />;
+            default:
+                return null;
+        }
     };
 
     return (
         <div className="app-container" style={{ overflow: 'hidden', position: 'relative' }}>
-            <AnimatePresence initial={false} custom={navDirection}>
-                <motion.div
-                    key={underlyingView}
-                    custom={navDirection}
-                    variants={variants}
-                    initial="enter"
-                    animate="center"
-                    exit="exit"
-                    transition={{
-                        x: { type: "spring", stiffness: 300, damping: 32 },
-                        opacity: { duration: 0.2 }
-                    }}
-                    style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        backgroundColor: 'var(--background)',
-                        overflowY: 'auto',
-                        WebkitOverflowScrolling: 'touch'
-                    }}
-                >
-                    {underlyingView === 'HOME' && <ProjectList navigateTo={navigateTo} />}
-                    {underlyingView === 'ALL_PROJECTS' && <AllProjectsView navigateTo={navigateTo} />}
-                    {underlyingView === 'PROJECT_DETAIL' && <ProjectDetail projectId={selectedProjectId} navigateTo={navigateTo} initialPhotoId={editingPhotoId} returnView={projectDetailReturnView} />}
-                    {underlyingView === 'RECENT_PHOTOS' && <AllPhotosView navigateTo={navigateTo} initialPhotoId={editingPhotoId} />}
-                    {underlyingView === 'MY_MARKUPS' && <MyMarkupsView navigateTo={navigateTo} initialPhotoId={editingPhotoId} />}
-                    {underlyingView === 'SETTINGS' && <PlaceholderView title="Settings" type="settings" navigateTo={navigateTo} returnView={settingsReturnView} />}
-                    {underlyingView === 'PROFILE' && <ProfileView navigateTo={navigateTo} />}
-                </motion.div>
-            </AnimatePresence>
+            <div 
+                id="current-view"
+                style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: 'var(--background)',
+                    overflowY: (currentView === 'HOME') ? 'hidden' : 'auto',
+                    overflowX: 'hidden',
+                    WebkitOverflowScrolling: 'touch'
+                }}
+            >
+                {renderView()}
+            </div>
 
-            {/* Overlays mount ON TOP of the underlying view with their own internal AnimatePresence inside components */}
-            <AnimatePresence>
-                {currentView === 'CAMERA' && <CameraView key="camera" projectId={selectedProjectId} currentFolderId={activeFolderId} navigateTo={navigateTo} returnView={cameraReturnView} />}
-            </AnimatePresence>
-            <AnimatePresence>
-                {currentView === 'MARKUP' && <MarkupView key="markup" projectId={selectedProjectId} currentFolderId={activeFolderId} photoUrl={capturedPhotoUrl} editingPhotoId={editingPhotoId} navigateTo={navigateTo} returnView={markupReturnView} />}
-            </AnimatePresence>
+            {/* Overlays mount ON TOP of the underlying view */}
+            {currentView === 'CAMERA' && <CameraView key="camera" projectId={selectedProjectId} currentFolderId={activeFolderId} navigateTo={navigateTo} returnView={cameraReturnView} />}
+            {currentView === 'MARKUP' && <MarkupView key="markup" projectId={selectedProjectId} currentFolderId={activeFolderId} photoUrl={capturedPhotoUrl} editingPhotoId={editingPhotoId} navigateTo={navigateTo} returnView={markupReturnView} />}
 
             {/* Public Shared Web Link */}
             {currentView === 'SHARED_VIEW' && <SharedProjectView payload={sharedDataPayload} />}

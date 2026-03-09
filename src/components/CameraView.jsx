@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Camera as CameraIcon } from 'lucide-react';
+import LoadingSpinner from './LoadingSpinner';
 
-const CameraView = ({ projectId, navigateTo, returnView = 'HOME' }) => {
+const CameraView = ({ projectId, currentFolderId, navigateTo, returnView = 'HOME' }) => {
     const hasRequested = useRef(false);
     const [error, setError] = useState(null);
 
@@ -29,7 +30,7 @@ const CameraView = ({ projectId, navigateTo, returnView = 'HOME' }) => {
                 });
 
                 if (image && image.dataUrl) {
-                    navigateTo('MARKUP', projectId, image.dataUrl);
+                    navigateTo('MARKUP', projectId, image.dataUrl, null, currentFolderId);
                 } else {
                     navigateTo(returnView, projectId);
                 }
@@ -72,11 +73,7 @@ const CameraView = ({ projectId, navigateTo, returnView = 'HOME' }) => {
                     </button>
                 </>
             ) : (
-                <>
-                    <CameraIcon size={48} color="var(--primary-color)" style={{ marginBottom: '1.5rem', opacity: 0.8 }} />
-                    <h2 style={{ marginBottom: '1rem' }}>Linking to Local Camera...</h2>
-                    <p style={{ color: 'var(--text-secondary)' }}>Waiting for secure Apple Sandbox bridge.</p>
-                </>
+                <LoadingSpinner message="Linking to Local Camera..." />
             )}
         </div>
     );

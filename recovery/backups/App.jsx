@@ -90,12 +90,8 @@ function MainRoutes() {
         return <LoadingSpinner />;
     }
 
-    if (!currentUser || currentUser.isNewUser) {
-        if (currentView === 'SHARED_VIEW') {
-            // Allow shared view even for unauthenticated
-        } else {
-            return <OnboardingView />;
-        }
+    if (!currentUser && currentView !== 'SHARED_VIEW') {
+        return <OnboardingView />;
     }
 
     const isOverlayView = ['MARKUP', 'CAMERA'].includes(currentView);

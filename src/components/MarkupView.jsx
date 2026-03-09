@@ -3,12 +3,19 @@ import { useApp } from '../AppContext';
 import * as db from '../db';
 import { PenTool, Undo2, MessageSquare, Edit2, Trash2 } from 'lucide-react';
 import TagSelector from './TagSelector';
+import LoadingSpinner from './LoadingSpinner';
 
 const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo, returnView = 'PROJECT_DETAIL', currentFolderId }) => {
     const canvasRef = useRef(null);
     const containerRef = useRef(null);
     const { currentUser } = useApp();
 
+    const [notes, setNotes] = useState('');
+    const [selectedTags, setSelectedTags] = useState([]);
+    const [isDrawing, setIsDrawing] = useState(false);
+    const [isDrawMode, setIsDrawMode] = useState(true);
+    const [color, setColor] = useState('#ef4444');
+    const [isSaving, setIsSaving] = useState(false);
     const [history, setHistory] = useState([]);
 
     const [originalPhotoUrl, setOriginalPhotoUrl] = useState(photoUrl);
@@ -304,7 +311,12 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo, returnVie
 
                 {/* Row 2: Tag Selector */}
                 <div style={{ padding: '0 1rem 0.5rem' }}>
-                    <TagSelector selectedTags={selectedTags} onTagsChange={setSelectedTags} dropdownDirection="down" />
+                    <TagSelector 
+                        selectedTags={selectedTags} 
+                        onTagsChange={setSelectedTags} 
+                        dropdownDirection="down" 
+                        projectId={projectId}
+                    />
                 </div>
 
                 {/* Row 3: Notes */}
@@ -390,9 +402,20 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo, returnVie
                     className="btn btn-primary"
                     onClick={handleSave}
                     disabled={isSaving}
-                    style={{ flex: 1.5, padding: '0.8rem 0.5rem', fontWeight: 'bold', fontSize: '0.9rem' }}
+                    style={{ 
+                        flex: 1.5, 
+                        padding: '0.8rem 0.5rem', 
+                        fontWeight: 'bold', 
+                        fontSize: '0.9rem',
+                        minHeight: '48px', // Prevent height jump during loading
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}
                 >
-                    {isSaving ? 'Saving...' : 'Save'}
+                    {isSaving ? (
+                        <LoadingSpinner fullScreen={false} size="20px" />
+                    ) : 'Save'}
                 </button>
             </div>
         </div>

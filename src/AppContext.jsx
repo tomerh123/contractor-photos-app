@@ -20,10 +20,11 @@ export const AppProvider = ({ children }) => {
     const refreshProfile = async (uid) => {
         const profile = await db.getProfile(uid);
         if (profile) {
-            setCurrentUser({ ...profile, uid });
+            setCurrentUser({ ...profile, uid, isNewUser: false });
             await fetchProjects(uid);
         } else {
-            setCurrentUser(null);
+            // Authenticated but no profile yet (new user)
+            setCurrentUser({ uid, isNewUser: true });
         }
     };
 
