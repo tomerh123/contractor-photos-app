@@ -3,7 +3,7 @@ import * as db from '../db';
 import { Plus, CheckCircle2, Circle, Trash2 } from 'lucide-react';
 import LoadingSpinner from './LoadingSpinner';
 
-const PunchListView = ({ projectId }) => {
+const PunchListView = ({ projectId, onTodosChange }) => {
     const [todos, setTodos] = useState([]);
     const [newTaskText, setNewTaskText] = useState('');
     const [loading, setLoading] = useState(true);
