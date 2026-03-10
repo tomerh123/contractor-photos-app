@@ -466,21 +466,6 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                                 ) : (
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                         <span>Photo Gallery</span>
-                                        {openTodosCount > 0 && (
-                                            <span style={{
-                                                backgroundColor: 'white',
-                                                color: 'var(--background)',
-                                                fontSize: '0.8rem',
-                                                fontWeight: 'bold',
-                                                padding: '2px 8px',
-                                                borderRadius: '12px',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '3px'
-                                            }}>
-                                                {openTodosCount} left
-                                            </span>
-                                        )}
                                     </div>
                                 )}
                             </h3>
