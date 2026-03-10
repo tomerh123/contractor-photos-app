@@ -981,8 +981,8 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                 // Determine if we should show "Uncategorized Gallery" (Root)
                 // We show it if AT LEAST ONE selected item is currently inside a folder
                 const canMoveToRoot = 
-                    photos.some(p => selectedPhotoIds.has(p.PhotoID) && p.FolderID !== null) ||
-                    folders.some(f => selectedFolderIds.has(f.FolderID) && f.ParentFolderID !== null);
+                    (photos || []).some(p => selectedPhotoIds.has(p.PhotoID) && !!p.FolderID) ||
+                    (folders || []).some(f => selectedFolderIds.has(f.FolderID) && !!f.ParentFolderID);
 
                 return (
                     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 4000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={() => setShowMoveModal(false)}>
