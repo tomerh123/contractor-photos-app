@@ -142,8 +142,7 @@ const PunchListView = ({ projectId, onTodosChange }) => {
                                 backgroundColor: 'var(--surface)',
                                 borderRadius: '12px',
                                 border: '1px solid var(--border)',
-                                transition: 'opacity 0.2s',
-                                opacity: todo.IsCompleted ? 0.6 : 1
+                                transition: 'opacity 0.2s'
                             }}
                         >
                             <button
@@ -167,8 +166,7 @@ const PunchListView = ({ projectId, onTodosChange }) => {
                             <span style={{
                                 flex: 1,
                                 fontSize: '1rem',
-                                color: todo.IsCompleted ? 'var(--text-secondary)' : 'var(--text-primary)',
-                                textDecoration: todo.IsCompleted ? 'line-through' : 'none',
+                                color: 'var(--text-primary)',
                                 overflowWrap: 'break-word',
                                 wordBreak: 'break-word'
                             }}>
