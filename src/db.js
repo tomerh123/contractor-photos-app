@@ -1,5 +1,5 @@
 import { auth, db as firestore, storage } from './firebase';
-import { collection, doc, setDoc, getDoc, getDocs, query, where, updateDoc, deleteDoc, deleteField } from 'firebase/firestore';
+import { collection, doc, setDoc, getDoc, getDocs, query, where, updateDoc, deleteDoc, deleteField, onSnapshot } from 'firebase/firestore';
 import { ref, uploadString, getDownloadURL, deleteObject } from 'firebase/storage';
 
 const getUid = () => {
@@ -179,6 +179,20 @@ export const getPhotosForProject = async (projectId) => {
         return timeB - timeA;
     });
     return memoryCache.projectPhotos[projectId];
+};
+
+export const subscribeToPhotosForProject = (projectId, callback) => {
+    const q = query(collection(firestore, 'photos'), where("userId", "==", getUid()), where("ProjectID", "==", projectId));
+    return onSnapshot(q, (snapshot) => {
+        const photos = snapshot.docs.map(doc => doc.data());
+        const sortedPhotos = photos.sort((a, b) => {
+            const timeA = a.Timestamp ? new Date(a.Timestamp).getTime() : 0;
+            const timeB = b.Timestamp ? new Date(b.Timestamp).getTime() : 0;
+            return timeB - timeA;
+        });
+        memoryCache.projectPhotos[projectId] = sortedPhotos;
+        callback(sortedPhotos);
+    });
 };
 
 export const getAllPhotos = async () => {

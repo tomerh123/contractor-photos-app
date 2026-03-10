@@ -162,9 +162,6 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
 
         await Promise.all(files.map(file => readAndSavePhoto(file)));
 
-        // Refresh gallery
-        const projPhotos = await db.getPhotosForProject(projectId);
-        setPhotos(projPhotos);
         setIsUploading(false);
 
         // Reset input so the same files can be selected again if needed
@@ -216,9 +213,6 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
 
         await db.movePhotosToFolder(photoIds, targetFolderId);
 
-        const projPhotos = await db.getPhotosForProject(projectId);
-        setPhotos(projPhotos);
-
         setIsUploading(false);
         setShowMoveModal(false);
         setIsSelectionMode(false);
@@ -235,15 +229,11 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
         if (deleteModalConfig.type === 'folder') {
             await db.deleteProjectFolder(deleteModalConfig.folderId);
             setFolders(folders.filter(f => f.FolderID !== deleteModalConfig.folderId));
-            const projPhotos = await db.getPhotosForProject(projectId);
-            setPhotos(projPhotos);
             setActiveFolderId(null);
         } else if (deleteModalConfig.type === 'photos') {
             for (const pid of selectedPhotoIds) {
                 await db.deletePhoto(pid);
             }
-            const projPhotos = await db.getPhotosForProject(projectId);
-            setPhotos(projPhotos);
             setSelectedPhotoIds(new Set());
             setIsSelectionMode(false);
         }
@@ -257,11 +247,9 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                 setLoading(true);
             }
             const proj = await db.getProject(projectId);
-            const projPhotos = await db.getPhotosForProject(projectId);
             const projFolders = await db.getProjectFolders(projectId);
 
             setProject(proj);
-            setPhotos(projPhotos);
             setFolders(projFolders);
 
             if (initialPhotoId) {
@@ -280,6 +268,31 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
         if (projectId) {
             fetchData();
         }
+    }, [projectId]);
+
+    // Real-time photo subscription
+    useEffect(() => {
+        if (!projectId) return;
+        
+        const unsubscribe = db.subscribeToPhotosForProject(projectId, (updatedPhotos) => {
+            setPhotos(updatedPhotos);
+            setLoading(false);
+
+            // Handle initial photo selection if it wasn't already handled
+            if (initialPhotoId && !selectedPhoto) {
+                const targetPhoto = updatedPhotos.find(p => p.PhotoID === initialPhotoId);
+                if (targetPhoto) {
+                    if (targetPhoto.FolderID) {
+                        setActiveFolderId(targetPhoto.FolderID);
+                    } else {
+                        setActiveFolderId(null);
+                    }
+                    setSelectedPhoto(targetPhoto);
+                }
+            }
+        });
+
+        return () => unsubscribe();
     }, [projectId, initialPhotoId]);
 
     // Listen for the router clearing the initialPhotoId (e.g. returning to library after a 'Save')
