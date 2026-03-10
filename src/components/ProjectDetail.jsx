@@ -482,24 +482,52 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
 
                         {/* Row 2: Actions */}
                         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: '1.5rem', gap: '0.75rem' }}>
-                            {/* Left: New Room / Manage Tags / Delete Room */}
                             {!isSelectionMode ? (
                                 <>
+                                    {/* Left: New Folder */}
                                     <button
                                         onClick={() => setShowNewFolderModal(true)}
                                         style={{ flex: 1, minHeight: '74px', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.2)', color: '#38bdf8', padding: '10px 8px', borderRadius: '12px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                                     >
                                         <Plus size={18} color="#38bdf8" strokeWidth={3} />
-                                        <span style={{ fontSize: '0.8rem', fontWeight: 800, textAlign: 'center', lineHeight: 1.2 }}>New<br/>Room</span>
+                                        <span style={{ fontSize: '0.8rem', fontWeight: 800, textAlign: 'center', lineHeight: 1.2 }}>New<br/>Folder</span>
                                     </button>
 
+                                    {/* Middle: Select Photos */}
+                                    {photos.length > 0 && (
+                                        <button
+                                            onClick={() => setIsSelectionMode(true)}
+                                            style={{ 
+                                                flex: 1, 
+                                                minHeight: '74px',
+                                                background: 'rgba(255, 255, 255, 0.1)', 
+                                                border: '1px solid rgba(255, 255, 255, 0.2)', 
+                                                color: 'white', 
+                                                padding: '10px 8px', 
+                                                borderRadius: '12px', 
+                                                cursor: 'pointer', 
+                                                display: 'flex', 
+                                                flexDirection: 'column', 
+                                                alignItems: 'center', 
+                                                justifyContent: 'center', 
+                                                gap: '6px' 
+                                            }}
+                                        >
+                                            <CheckSquare size={18} color="white" strokeWidth={3} />
+                                            <span style={{ fontSize: '0.8rem', fontWeight: 800, textAlign: 'center', lineHeight: 1.1 }}>
+                                                Select<br/>Photos
+                                            </span>
+                                        </button>
+                                    )}
+
+                                    {/* Right: Manage Tags or Delete Folder */}
                                     {activeFolderId ? (
                                         <button
                                             onClick={() => triggerDeleteFolder(activeFolderId)}
                                             style={{ flex: 1, minHeight: '74px', background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--danger)', padding: '10px 8px', borderRadius: '12px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                                         >
                                             <Trash2 size={18} />
-                                            <span style={{ fontSize: '0.8rem', fontWeight: 800, textAlign: 'center', lineHeight: 1.2 }}>Delete<br/>Room</span>
+                                            <span style={{ fontSize: '0.8rem', fontWeight: 800, textAlign: 'center', lineHeight: 1.2 }}>Delete<br/>Folder</span>
                                         </button>
                                     ) : (
                                         <button
@@ -508,33 +536,6 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                                         >
                                             <TagIcon size={18} color="var(--primary-color)" strokeWidth={3} />
                                             <span style={{ fontSize: '0.8rem', fontWeight: 800, textAlign: 'center', lineHeight: 1.2 }}>Manage<br/>Tags</span>
-                                        </button>
-                                    )}
-
-                                    {/* Select Button */}
-                                    {photos.length > 0 && (
-                                        <button
-                                            onClick={() => setIsSelectionMode(true)}
-                                            style={{ 
-                                                flex: activeFolderId ? 1 : 1, 
-                                                minHeight: activeFolderId ? 'auto' : '74px',
-                                                background: 'rgba(255, 255, 255, 0.1)', 
-                                                border: '1px solid rgba(255, 255, 255, 0.2)', 
-                                                color: 'white', 
-                                                padding: activeFolderId ? '12px 14px' : '10px 8px', 
-                                                borderRadius: '12px', 
-                                                cursor: 'pointer', 
-                                                display: 'flex', 
-                                                flexDirection: activeFolderId ? 'row' : 'column', 
-                                                alignItems: 'center', 
-                                                justifyContent: 'center', 
-                                                gap: '6px' 
-                                            }}
-                                        >
-                                            <CheckSquare size={18} color="white" strokeWidth={3} />
-                                            <span style={{ fontSize: '0.8rem', fontWeight: 800, textAlign: 'center', lineHeight: 1.1 }}>
-                                                {activeFolderId ? 'Select Photos' : <>Select<br/>Photos</>}
-                                            </span>
                                         </button>
                                     )}
                                 </>
