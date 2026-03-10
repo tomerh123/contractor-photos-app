@@ -350,31 +350,35 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
             />
 
             <header className="header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
-                <button 
-                    className="btn" 
-                    onClick={() => {
-                        if (activeFolderId) {
-                            const currentFolder = folders.find(f => f.FolderID === activeFolderId);
-                            setActiveFolderId(currentFolder?.ParentFolderID || null);
-                        } else {
-                            navigateTo(returnView);
-                        }
-                    }} 
-                    style={{ 
-                        background: 'var(--surface-active)', 
-                        border: '1px solid var(--border)', 
-                        padding: '0.5rem', 
-                        borderRadius: '50%', 
-                        width: '40px', 
-                        height: '40px', 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'center', 
-                        flexShrink: 0 
-                    }}
-                >
-                    <ArrowLeft size={20} />
-                </button>
+                {!isSelectionMode ? (
+                    <button 
+                        className="btn" 
+                        onClick={() => {
+                            if (activeFolderId) {
+                                const currentFolder = folders.find(f => f.FolderID === activeFolderId);
+                                setActiveFolderId(currentFolder?.ParentFolderID || null);
+                            } else {
+                                navigateTo(returnView);
+                            }
+                        }} 
+                        style={{ 
+                            background: 'var(--surface-active)', 
+                            border: '1px solid var(--border)', 
+                            padding: '0.5rem', 
+                            borderRadius: '50%', 
+                            width: '40px', 
+                            height: '40px', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            flexShrink: 0 
+                        }}
+                    >
+                        <ArrowLeft size={20} />
+                    </button>
+                ) : (
+                    <div style={{ width: '40px' }} />
+                )}
                 <div style={{ flex: 1, textAlign: 'center', minWidth: 0 }}>
                     <h2 style={{ fontSize: '1.2rem', margin: 0, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
                         {project.ProjectName}
