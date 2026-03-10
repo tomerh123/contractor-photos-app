@@ -123,74 +123,25 @@ const ProjectList = ({ navigateTo }) => {
 
         setIsSubmitting(true);
 
-        const readAndSavePhoto = (file) => {
-            return new Promise((resolve) => {
-                const img = new Image();
-                img.onload = async () => {
-                    const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 1600;
-                    const MAX_HEIGHT = 1600;
-                    let width = img.width;
-                    let height = img.height;
-
-                    if (width > height) {
-                        if (width > MAX_WIDTH) {
-                            height = Math.round((height *= MAX_WIDTH / width));
-                            width = MAX_WIDTH;
-                        }
-                    } else {
-                        if (height > MAX_HEIGHT) {
-                            width = Math.round((width *= MAX_HEIGHT / height));
-                            height = MAX_HEIGHT;
-                        }
-                    }
-
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
-
-                    const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
-
-                    let captureTimestamp = new Date().toISOString();
-                    try {
-                        const exif = await exifr.parse(file, ['DateTimeOriginal', 'CreateDate']);
-                        const exifDate = exif?.DateTimeOriginal || exif?.CreateDate;
-                        if (exifDate) {
-                            captureTimestamp = new Date(exifDate).toISOString();
-                        }
-                    } catch (exifErr) {
-                        console.log('No EXIF date found, using import time:', exifErr);
-                    }
-
-                    await db.addPhoto({
-                        ProjectID: targetProjectId,
-                        ImageFile: compressedDataUrl,
-                        Notes: '',
-                        FolderID: null,
-                        Source: 'gallery',
-                        Timestamp: captureTimestamp
-                    });
-
-                    URL.revokeObjectURL(img.src);
-                    resolve();
-                };
-                img.src = URL.createObjectURL(file);
-            });
-        };
-
-        await Promise.all(files.map(file => readAndSavePhoto(file)));
+        try {
+            await Promise.all(
+                files.map(file => db.processAndAddPhoto(file, targetProjectId))
+            );
+        } catch (err) {
+            console.error("Error importing photos globally:", err);
+        }
 
         await refreshProjects();
         setIsSubmitting(false);
+        const pid = targetProjectId; // Keep ID for navigation
         setTargetProjectId(null);
 
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
         }
 
-        // Navigate to the project to see the new photos
-        navigateTo('PROJECT_DETAIL', targetProjectId);
+        // Navigate to the project gallery (main page) after import
+        navigateTo('PROJECT_DETAIL', pid);
     };
 
     // Refresh projects on mount

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Camera as CameraIcon } from 'lucide-react';
+import * as db from '../db';
 import LoadingSpinner from './LoadingSpinner';
 
 const CameraView = ({ projectId, currentFolderId, navigateTo, returnView = 'HOME' }) => {
@@ -30,7 +31,13 @@ const CameraView = ({ projectId, currentFolderId, navigateTo, returnView = 'HOME
                 });
 
                 if (image && image.dataUrl) {
-                    navigateTo('MARKUP', projectId, image.dataUrl, null, currentFolderId);
+                    // Convert dataUrl to a File object for unified processing
+                    const res = await fetch(image.dataUrl);
+                    const blob = await res.blob();
+                    const file = new File([blob], `camera_${Date.now()}.jpg`, { type: 'image/jpeg' });
+                    
+                    await db.processAndAddPhoto(file, projectId, currentFolderId, "camera");
+                    navigateTo('PROJECT_DETAIL', projectId);
                 } else {
                     navigateTo(returnView, projectId);
                 }

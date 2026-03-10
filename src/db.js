@@ -1,6 +1,7 @@
 import { auth, db as firestore, storage } from './firebase';
 import { collection, doc, setDoc, getDoc, getDocs, query, where, updateDoc, deleteDoc, deleteField, onSnapshot } from 'firebase/firestore';
 import { ref, uploadString, getDownloadURL, deleteObject } from 'firebase/storage';
+import exifr from 'exifr';
 
 const getUid = () => {
     const uid = auth.currentUser?.uid;
@@ -212,6 +213,70 @@ export const getAllPhotos = async () => {
         return timeB - timeA;
     });
     return memoryCache.allPhotos;
+};
+
+/**
+ * Unified helper to process an image file (resize, extract EXIF) and add to DB.
+ */
+export const processAndAddPhoto = async (file, projectId, folderId = null, uploaderId = null) => {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = async () => {
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 1600;
+            const MAX_HEIGHT = 1600;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+                if (width > MAX_WIDTH) {
+                    height = Math.round((height *= MAX_WIDTH / width));
+                    width = MAX_WIDTH;
+                }
+            } else {
+                if (height > MAX_HEIGHT) {
+                    width = Math.round((width *= MAX_HEIGHT / height));
+                    height = MAX_HEIGHT;
+                }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+
+            let captureTimestamp = new Date().toISOString();
+            try {
+                const exif = await exifr.parse(file, ['DateTimeOriginal', 'CreateDate']);
+                const exifDate = exif?.DateTimeOriginal || exif?.CreateDate;
+                if (exifDate) {
+                    captureTimestamp = new Date(exifDate).toISOString();
+                }
+            } catch (exifErr) {
+                console.log('No EXIF date found, using import time:', exifErr);
+            }
+
+            try {
+                const addedPhoto = await addPhoto({
+                    ProjectID: projectId,
+                    ImageFile: compressedDataUrl,
+                    Notes: '',
+                    FolderID: folderId,
+                    Source: uploaderId ? 'camera' : 'gallery',
+                    Timestamp: captureTimestamp,
+                    UploaderID: uploaderId
+                });
+                URL.revokeObjectURL(img.src);
+                resolve(addedPhoto);
+            } catch (err) {
+                reject(err);
+            }
+        };
+        img.onerror = reject;
+        img.src = URL.createObjectURL(file);
+    });
 };
 
 export const addPhoto = async (photoData) => {
