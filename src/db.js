@@ -452,11 +452,24 @@ export const renameTagGlobally = async (projectId, oldTagName, newTagName) => {
 export const getProjectFolders = async (projectId) => {
     const q = query(collection(firestore, 'folders'), where("userId", "==", getUid()), where("ProjectID", "==", projectId));
     const snapshot = await getDocs(q);
-    const folders = snapshot.docs.map(doc => doc.data());
+    const folders = snapshot.docs.map(doc => ({ ...doc.data(), FolderID: doc.id }));
     return folders.sort((a, b) => {
         const timeA = a.CreatedAt ? new Date(a.CreatedAt).getTime() : 0;
         const timeB = b.CreatedAt ? new Date(b.CreatedAt).getTime() : 0;
         return timeA - timeB;
+    });
+};
+
+export const subscribeToFoldersForProject = (projectId, callback) => {
+    const q = query(collection(firestore, 'folders'), where("userId", "==", getUid()), where("ProjectID", "==", projectId));
+    return onSnapshot(q, (snapshot) => {
+        const folders = snapshot.docs.map(doc => ({ ...doc.data(), FolderID: doc.id }));
+        const sortedFolders = folders.sort((a, b) => {
+            const timeA = a.CreatedAt ? new Date(a.CreatedAt).getTime() : 0;
+            const timeB = b.CreatedAt ? new Date(b.CreatedAt).getTime() : 0;
+            return timeA - timeB;
+        });
+        callback(sortedFolders);
     });
 };
 

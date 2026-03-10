@@ -175,7 +175,6 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
         setIsUploading(true);
         // Pass activeFolderId as parent
         const newFolder = await db.addProjectFolder(projectId, newFolderName.trim(), activeFolderId);
-        setFolders([...folders, newFolder]);
         setNewFolderName('');
         setShowNewFolderModal(false);
         setIsUploading(false);
@@ -186,8 +185,7 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
     const handleRenameFolder = async () => {
         if (!editingFolder || !newFolderName.trim()) return;
         setIsUploading(true);
-        const updated = await db.updateProjectFolder(editingFolder.FolderID, newFolderName.trim());
-        setFolders(prev => prev.map(f => f.FolderID === updated.FolderID ? updated : f));
+        await db.updateProjectFolder(editingFolder.FolderID, newFolderName.trim());
         setEditingFolder(null);
         setNewFolderName('');
         setIsUploading(false);
@@ -228,7 +226,6 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
         setIsUploading(true);
         if (deleteModalConfig.type === 'folder') {
             await db.deleteProjectFolder(deleteModalConfig.folderId);
-            setFolders(folders.filter(f => f.FolderID !== deleteModalConfig.folderId));
             setActiveFolderId(null);
         } else if (deleteModalConfig.type === 'photos') {
             for (const pid of selectedPhotoIds) {
@@ -247,15 +244,21 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                 setLoading(true);
             }
             const proj = await db.getProject(projectId);
-            const projFolders = await db.getProjectFolders(projectId);
-
             setProject(proj);
-            setFolders(projFolders);
-            // Loading is handled by the subscription useEffect
+            // Loading and folders are handled by the subscription useEffects
         };
         if (projectId) {
             fetchData();
         }
+    }, [projectId]);
+
+    // Real-time folder subscription
+    useEffect(() => {
+        if (!projectId) return;
+        const unsubscribe = db.subscribeToFoldersForProject(projectId, (updatedFolders) => {
+            setFolders(updatedFolders);
+        });
+        return () => unsubscribe();
     }, [projectId]);
 
     // Real-time photo subscription
@@ -657,7 +660,19 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                                             </div>
 
                                             <div style={{ position: 'absolute', bottom: '8px', left: '8px', right: '8px' }}>
-                                                <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: '0.75rem', fontWeight: 500 }}>{folderPhotos.length} {folderPhotos.length === 1 ? 'photo' : 'photos'}</div>
+                                                <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: '0.75rem', fontWeight: 500 }}>
+                                                    {(() => {
+                                                        const subFoldersCount = folders.filter(f => f.ParentFolderID === folder.FolderID).length;
+                                                        const parts = [];
+                                                        if (folderPhotos.length > 0 || subFoldersCount === 0) {
+                                                            parts.push(`${folderPhotos.length} ${folderPhotos.length === 1 ? 'photo' : 'photos'}`);
+                                                        }
+                                                        if (subFoldersCount > 0) {
+                                                            parts.push(`${subFoldersCount} folder${subFoldersCount === 1 ? '' : 's'}`);
+                                                        }
+                                                        return parts.join(' • ');
+                                                    })()}
+                                                </div>
                                             </div>
                                         </div>
                                     )
