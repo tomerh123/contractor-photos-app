@@ -1000,7 +1000,7 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                                     >
                                         <FolderOpen size={20} color="var(--text-secondary)" />
                                         <div>
-                                            <div style={{ fontWeight: 600 }}>Uncategorized Gallery</div>
+                                            <div style={{ fontWeight: 600 }}>Main Project Gallery</div>
                                             <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Move to top level</div>
                                         </div>
                                     </button>
