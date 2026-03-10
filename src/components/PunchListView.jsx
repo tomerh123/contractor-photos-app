@@ -12,11 +12,11 @@ const PunchListView = ({ projectId, onTodosChange }) => {
         loadTodos();
     }, [projectId]);
 
-    const loadTodos = async () => {
-        setLoading(true);
+    const loadTodos = async (silent = false) => {
+        if (!silent) setLoading(true);
         const fetchedTodos = await db.getTodosForProject(projectId);
         setTodos(fetchedTodos);
-        setLoading(false);
+        if (!silent) setLoading(false);
     };
 
     const handleAddTask = async (e) => {
@@ -38,7 +38,7 @@ const PunchListView = ({ projectId, onTodosChange }) => {
 
         await db.addTodo(newTodo);
         setNewTaskText('');
-        await loadTodos();
+        await loadTodos(true); // Silent refresh
     };
 
     const handleToggleTodo = async (todoId) => {
@@ -55,7 +55,7 @@ const PunchListView = ({ projectId, onTodosChange }) => {
 
         // Persist to DB
         await db.toggleTodo(todoId);
-        loadTodos(); // Refresh to catch actual DB state and sorting
+        loadTodos(true); // Silent refresh
     };
 
     const handleDeleteTodo = async (todoId) => {
@@ -66,7 +66,7 @@ const PunchListView = ({ projectId, onTodosChange }) => {
         }
 
         await db.deleteTodo(todoId);
-        await loadTodos();
+        await loadTodos(true); // Silent refresh
     };
 
     // Sort todos: active ones first, completed ones at the bottom, then by timestamp
