@@ -1092,7 +1092,12 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                             {deleteModalConfig.type === 'project' ? (
                                 <>Are you sure you want to delete <strong>{project.ProjectName}</strong>? This action will archive the project and all its contents.</>
                             ) : deleteModalConfig.type === 'folder' ? (
-                                'Are you sure you want to delete this room? Any photos inside will be moved up to the parent room (or back to the main gallery if this is a top-level room).'
+                                (() => {
+                                    const folderToDelete = folders.find(f => f.FolderID === deleteModalConfig.folderId);
+                                    const parentFolder = folderToDelete?.ParentFolderID ? folders.find(f => f.FolderID === folderToDelete.ParentFolderID) : null;
+                                    const targetName = parentFolder ? `"${parentFolder.Name}"` : "the Main Project Gallery";
+                                    return `Are you sure you want to delete this room? Any photos inside will be moved up to ${targetName}.`;
+                                })()
                             ) : (
                                 `Are you sure you want to permanently delete ${selectedPhotoIds.size} photo${selectedPhotoIds.size === 1 ? '' : 's'}${selectedFolderIds.size > 0 ? ` and ${selectedFolderIds.size} folder${selectedFolderIds.size === 1 ? '' : 's'}` : ''}? This action cannot be undone.`
                             )}
