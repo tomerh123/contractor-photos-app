@@ -592,12 +592,21 @@ export const deleteProjectFolder = async (folderId) => {
     };
     findChildren(folderId);
 
-    // Phase 2: Orphan all photos that were sitting inside any of these folders
+    // Phase 1.5: Find the target redistribution folder (direct parent of the top-most folder being deleted)
+    const topFolderRef = doc(firestore, 'folders', folderId);
+    const topFolderSnap = await getDoc(topFolderRef);
+    const redistributionFolderId = topFolderSnap.exists() ? (topFolderSnap.data().ParentFolderID || null) : null;
+
+    // Phase 2: Redistribute all photos that were sitting inside any of these folders
     for (const fid of folderIdsToDelete) {
         const q = query(collection(firestore, 'photos'), where("userId", "==", getUid()), where("FolderID", "==", fid));
         const snap = await getDocs(q);
         for (const d of snap.docs) {
-            await updateDoc(doc(firestore, 'photos', d.ref.id), { FolderID: deleteField() });
+            if (redistributionFolderId) {
+                await updateDoc(doc(firestore, 'photos', d.ref.id), { FolderID: redistributionFolderId });
+            } else {
+                await updateDoc(doc(firestore, 'photos', d.ref.id), { FolderID: deleteField() });
+            }
         }
     }
 
