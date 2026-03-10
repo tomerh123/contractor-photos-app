@@ -195,6 +195,9 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
         if (deleteModalConfig.type === 'folder') {
             await db.deleteProjectFolder(deleteModalConfig.folderId);
             setActiveFolderId(null);
+        } else if (deleteModalConfig.type === 'project') {
+            await db.deleteProject(projectId);
+            navigateTo('HOME');
         } else if (deleteModalConfig.type === 'photos') {
             for (const pid of selectedPhotoIds) {
                 await db.deletePhoto(pid);
@@ -384,7 +387,29 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                         {project.ProjectName}
                     </h2>
                 </div>
-                <div style={{ width: '40px' }} /> {/* Spacer to keep title centered */}
+                {!isSelectionMode ? (
+                    <button 
+                        className="btn" 
+                        onClick={() => setDeleteModalConfig({ isOpen: true, type: 'project', folderId: null })}
+                        style={{ 
+                            background: 'rgba(239, 68, 68, 0.1)', 
+                            border: '1px solid rgba(239, 68, 68, 0.2)', 
+                            padding: '0.5rem', 
+                            borderRadius: '50%', 
+                            width: '40px', 
+                            height: '40px', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            flexShrink: 0,
+                            color: 'var(--danger)'
+                        }}
+                    >
+                        <Trash2 size={20} />
+                    </button>
+                ) : (
+                    <div style={{ width: '40px' }} />
+                )}
             </header>
 
 
@@ -470,6 +495,12 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                                         >
                                             <Edit2 size={14} />
                                         </button>
+                                        <button 
+                                            onClick={() => triggerDeleteFolder(activeFolderId)}
+                                            style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--danger)', padding: '5px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: '6px', cursor: 'pointer' }}
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
                                     </span>
                                 ) : (
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -517,24 +548,14 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                                         </button>
                                     )}
 
-                                    {/* Right: Manage Tags or Delete Folder */}
-                                    {activeFolderId ? (
-                                        <button
-                                            onClick={() => triggerDeleteFolder(activeFolderId)}
-                                            style={{ flex: 1, minHeight: '74px', background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--danger)', padding: '10px 8px', borderRadius: '12px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-                                        >
-                                            <Trash2 size={18} />
-                                            <span style={{ fontSize: '0.8rem', fontWeight: 800, textAlign: 'center', lineHeight: 1.2 }}>Delete<br/>Folder</span>
-                                        </button>
-                                    ) : (
-                                        <button
-                                            onClick={() => setShowManageTagsModal(true)}
-                                            style={{ flex: 1, minHeight: '74px', background: 'rgba(249, 115, 22, 0.1)', border: '1px solid rgba(249, 115, 22, 0.2)', color: 'var(--primary-color)', padding: '10px 8px', borderRadius: '12px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-                                        >
-                                            <TagIcon size={18} color="var(--primary-color)" strokeWidth={3} />
-                                            <span style={{ fontSize: '0.8rem', fontWeight: 800, textAlign: 'center', lineHeight: 1.2 }}>Manage<br/>Tags</span>
-                                        </button>
-                                    )}
+                                    {/* Right: Manage Tags */}
+                                    <button
+                                        onClick={() => setShowManageTagsModal(true)}
+                                        style={{ flex: 1, minHeight: '74px', background: 'rgba(249, 115, 22, 0.1)', border: '1px solid rgba(249, 115, 22, 0.2)', color: 'var(--primary-color)', padding: '10px 8px', borderRadius: '12px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                                    >
+                                        <TagIcon size={18} color="var(--primary-color)" strokeWidth={3} />
+                                        <span style={{ fontSize: '0.8rem', fontWeight: 800, textAlign: 'center', lineHeight: 1.2 }}>Manage<br/>Tags</span>
+                                    </button>
                                 </>
                             ) : null}
                         </div>
@@ -1064,12 +1085,17 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 5000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
                     <div style={{ backgroundColor: 'var(--surface)', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '320px', border: '1px solid var(--border)' }}>
                         <h3 style={{ margin: '0 0 1rem 0', color: 'var(--text-primary)', fontSize: '1.1rem' }}>
-                            {deleteModalConfig.type === 'folder' ? 'Delete Room?' : 'Delete Items?'}
+                            {deleteModalConfig.type === 'project' ? 'Delete Project?' :
+                             deleteModalConfig.type === 'folder' ? 'Delete Room?' : 'Delete Items?'}
                         </h3>
                         <p style={{ margin: '0 0 1.5rem 0', color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.4' }}>
-                            {deleteModalConfig.type === 'folder'
-                                ? 'Are you sure you want to delete this room? The photos inside will NOT be deleted, they will just be moved back to the main unassigned gallery.'
-                                : `Are you sure you want to permanently delete ${selectedPhotoIds.size} photo${selectedPhotoIds.size === 1 ? '' : 's'}${selectedFolderIds.size > 0 ? ` and ${selectedFolderIds.size} folder${selectedFolderIds.size === 1 ? '' : 's'}` : ''}? This action cannot be undone.`}
+                            {deleteModalConfig.type === 'project' ? (
+                                <>Are you sure you want to delete <strong>{project.ProjectName}</strong>? This action will archive the project and all its contents.</>
+                            ) : deleteModalConfig.type === 'folder' ? (
+                                'Are you sure you want to delete this room? The photos inside will NOT be deleted, they will just be moved back to the main unassigned gallery.'
+                            ) : (
+                                `Are you sure you want to permanently delete ${selectedPhotoIds.size} photo${selectedPhotoIds.size === 1 ? '' : 's'}${selectedFolderIds.size > 0 ? ` and ${selectedFolderIds.size} folder${selectedFolderIds.size === 1 ? '' : 's'}` : ''}? This action cannot be undone.`
+                            )}
                         </p>
                         <div style={{ display: 'flex', gap: '1rem' }}>
                             <button
