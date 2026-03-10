@@ -276,7 +276,7 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
         }
     }, [initialPhotoId]);
 
-    if (loading) return <LoadingSpinner message="Loading project details..." padding="2rem" />;
+    if (loading || project === undefined) return <LoadingSpinner message="Loading project details..." padding="2rem" />;
     if (!project) return <div className="content-pad">Project not found.</div>;
 
     const activeFolderPhotos = activeFolderId
