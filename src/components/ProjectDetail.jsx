@@ -251,19 +251,7 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
 
             setProject(proj);
             setFolders(projFolders);
-
-            if (initialPhotoId) {
-                const targetPhoto = projPhotos.find(p => p.PhotoID === initialPhotoId);
-                if (targetPhoto) {
-                    if (targetPhoto.FolderID) {
-                        setActiveFolderId(targetPhoto.FolderID);
-                    } else {
-                        setActiveFolderId(null);
-                    }
-                    setSelectedPhoto(targetPhoto);
-                }
-            }
-            setLoading(false);
+            // Loading is handled by the subscription useEffect
         };
         if (projectId) {
             fetchData();
@@ -288,6 +276,17 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                         setActiveFolderId(null);
                     }
                     setSelectedPhoto(targetPhoto);
+                }
+            }
+
+            // Sync selected photo if it was updated (e.g. notes changed)
+            if (selectedPhoto) {
+                const updatedSelected = updatedPhotos.find(p => p.PhotoID === selectedPhoto.PhotoID);
+                if (updatedSelected) {
+                    setSelectedPhoto(updatedSelected);
+                } else {
+                    // Photo was deleted
+                    setSelectedPhoto(null);
                 }
             }
         });
@@ -872,20 +871,11 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                         }}
                         onUpdateNotes={async (photoId, newNotes, newTags) => {
                             await db.updatePhotoDetails(photoId, newNotes, newTags);
-                            // Refresh the photo list so the gallery and viewer update
-                            const projPhotos = await db.getPhotosForProject(projectId);
-                            setPhotos(projPhotos);
-                            if (selectedPhoto.PhotoID === photoId) {
-                                setSelectedPhoto(projPhotos.find(p => p.PhotoID === photoId));
-                            }
+                            // No manual refresh needed, listener handles it
                         }}
                         onDelete={async (photoId) => {
                             await db.deletePhoto(photoId);
-                            const newPhotos = await db.getPhotosForProject(projectId);
-                            setPhotos(newPhotos);
-                            if (newPhotos.length === 0) {
-                                setSelectedPhoto(null);
-                            }
+                            // No manual refresh needed, listener handles it
                         }}
                         getFolderName={(folderId) => {
                             if (!folderId) return null;
@@ -1073,8 +1063,6 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                                                                     if (!newTagNameInput.trim()) return;
                                                                     setIsUploading(true);
                                                                     await db.renameTagGlobally(projectId, tag, newTagNameInput.trim());
-                                                                    const updatedPhotos = await db.getPhotosForProject(projectId);
-                                                                    setPhotos(updatedPhotos);
                                                                     setTagToRename(null);
                                                                     setIsUploading(false);
                                                                 };
@@ -1099,8 +1087,6 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                                                             if (!newTagNameInput.trim()) return;
                                                             setIsUploading(true);
                                                             await db.renameTagGlobally(projectId, tag, newTagNameInput.trim());
-                                                            const updatedPhotos = await db.getPhotosForProject(projectId);
-                                                            setPhotos(updatedPhotos);
                                                             setTagToRename(null);
                                                             setIsUploading(false);
                                                         }}
@@ -1170,8 +1156,6 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                                                         DeletedTags: Array.from(new Set([...(currentUser?.DeletedTags || []), tagToDelete]))
                                                     });
                                                 }
-                                                const updatedPhotos = await db.getPhotosForProject(projectId);
-                                                setPhotos(updatedPhotos);
                                                 setTagToDelete(null);
                                                 setIsUploading(false);
                                             }}

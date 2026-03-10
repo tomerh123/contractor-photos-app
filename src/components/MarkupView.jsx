@@ -173,6 +173,7 @@ const MarkupView = ({ projectId, photoUrl, editingPhotoId, navigateTo, returnVie
     };
 
     const handleSave = async () => {
+        if (isSaving) return;
         setIsSaving(true);
         const modifiedPhotoUrl = canvasRef.current.toDataURL('image/jpeg', 0.6);
 
