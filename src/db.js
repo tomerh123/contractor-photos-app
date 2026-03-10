@@ -480,23 +480,42 @@ export const updateProjectFolder = async (folderId, newName) => {
 };
 
 export const deleteProjectFolder = async (folderId) => {
-    // Phase 1: Orphan all photos that were sitting inside this folder back into the main uncategorized gallery
-    const q = query(collection(firestore, 'photos'), where("userId", "==", getUid()), where("FolderID", "==", folderId));
-    const snap = await getDocs(q);
-    for (const d of snap.docs) {
-        await updateDoc(doc(firestore, 'photos', d.ref.id), { FolderID: deleteField() });
+    // Phase 1: Identify all sub-folders recursively
+    const allFolders = await getAllFolders();
+    const folderIdsToDelete = [folderId];
+    
+    const findChildren = (parentId) => {
+        const children = allFolders.filter(f => (f.ParentFolderID || null) === parentId);
+        for (const child of children) {
+            if (!folderIdsToDelete.includes(child.FolderID)) {
+                folderIdsToDelete.push(child.FolderID);
+                findChildren(child.FolderID);
+            }
+        }
+    };
+    findChildren(folderId);
+
+    // Phase 2: Orphan all photos that were sitting inside any of these folders
+    for (const fid of folderIdsToDelete) {
+        const q = query(collection(firestore, 'photos'), where("userId", "==", getUid()), where("FolderID", "==", fid));
+        const snap = await getDocs(q);
+        for (const d of snap.docs) {
+            await updateDoc(doc(firestore, 'photos', d.ref.id), { FolderID: deleteField() });
+        }
     }
 
-    // Phase 2: Safely destroy the folder metadata object itself
-    const docRef = doc(firestore, 'folders', folderId);
-    const folderSnap = await getDoc(docRef);
+    // Phase 3: Safely destroy the folder metadata objects
+    const firstFolderRef = doc(firestore, 'folders', folderId);
+    const firstFolderSnap = await getDoc(firstFolderRef);
     let projectID = null;
-    if (folderSnap.exists()) {
-        projectID = folderSnap.data().ProjectID;
+    if (firstFolderSnap.exists()) {
+        projectID = firstFolderSnap.data().ProjectID;
     }
 
-    // PhaseSafely destroy the folder metadata object itself
-    await deleteDoc(docRef);
+    for (const fid of folderIdsToDelete) {
+        await deleteDoc(doc(firestore, 'folders', fid));
+    }
+    
     clearDBCache();
 
     if (projectID) {
