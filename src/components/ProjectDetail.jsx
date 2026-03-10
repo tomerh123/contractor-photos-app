@@ -359,7 +359,9 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                         onClick={() => {
                             if (activeTab === 'PUNCHLIST') {
                                 setActiveTab('GALLERY');
-                            } else if (activeFolderId) {
+                            }
+                            
+                            if (activeFolderId) {
                                 const currentFolder = folders.find(f => f.FolderID === activeFolderId);
                                 setActiveFolderId(currentFolder?.ParentFolderID || null);
                             } else {
