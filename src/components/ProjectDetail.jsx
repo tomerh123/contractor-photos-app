@@ -176,11 +176,13 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
     const handleCreateFolder = async () => {
         if (!newFolderName.trim()) return;
         setIsUploading(true);
-        const newFolder = await db.addProjectFolder(projectId, newFolderName.trim());
+        // Pass activeFolderId as parent
+        const newFolder = await db.addProjectFolder(projectId, newFolderName.trim(), activeFolderId);
         setFolders([...folders, newFolder]);
         setNewFolderName('');
         setShowNewFolderModal(false);
         setIsUploading(false);
+        // Navigate into the new folder automatically
         setActiveFolderId(newFolder.FolderID);
     };
 
@@ -355,7 +357,14 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
             <header className="header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
                 <button 
                     className="btn" 
-                    onClick={() => activeFolderId ? setActiveFolderId(null) : navigateTo(returnView)} 
+                    onClick={() => {
+                        if (activeFolderId) {
+                            const currentFolder = folders.find(f => f.FolderID === activeFolderId);
+                            setActiveFolderId(currentFolder?.ParentFolderID || null);
+                        } else {
+                            navigateTo(returnView);
+                        }
+                    }} 
                     style={{ 
                         background: 'var(--surface-active)', 
                         border: '1px solid var(--border)', 
@@ -476,31 +485,30 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                             {/* Left: New Room / Manage Tags / Delete Room */}
                             {!isSelectionMode ? (
                                 <>
+                                    <button
+                                        onClick={() => setShowNewFolderModal(true)}
+                                        style={{ flex: 1, minHeight: '74px', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.2)', color: '#38bdf8', padding: '10px 8px', borderRadius: '12px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                                    >
+                                        <Plus size={18} color="#38bdf8" strokeWidth={3} />
+                                        <span style={{ fontSize: '0.8rem', fontWeight: 800, textAlign: 'center', lineHeight: 1.2 }}>New<br/>Room</span>
+                                    </button>
+
                                     {activeFolderId ? (
                                         <button
                                             onClick={() => triggerDeleteFolder(activeFolderId)}
-                                            style={{ flex: 1, background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--danger)', padding: '12px 14px', borderRadius: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                                            style={{ flex: 1, minHeight: '74px', background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--danger)', padding: '10px 8px', borderRadius: '12px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                                         >
                                             <Trash2 size={18} />
-                                            <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Delete Room</span>
+                                            <span style={{ fontSize: '0.8rem', fontWeight: 800, textAlign: 'center', lineHeight: 1.2 }}>Delete<br/>Room</span>
                                         </button>
                                     ) : (
-                                        <>
-                                            <button
-                                                onClick={() => setShowNewFolderModal(true)}
-                                                style={{ flex: 1, minHeight: '74px', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.2)', color: '#38bdf8', padding: '10px 8px', borderRadius: '12px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-                                            >
-                                                <Plus size={18} color="#38bdf8" strokeWidth={3} />
-                                                <span style={{ fontSize: '0.8rem', fontWeight: 800, textAlign: 'center', lineHeight: 1.2 }}>New<br/>Room</span>
-                                            </button>
-                                            <button
-                                                onClick={() => setShowManageTagsModal(true)}
-                                                style={{ flex: 1, minHeight: '74px', background: 'rgba(249, 115, 22, 0.1)', border: '1px solid rgba(249, 115, 22, 0.2)', color: 'var(--primary-color)', padding: '10px 8px', borderRadius: '12px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-                                            >
-                                                <TagIcon size={18} color="var(--primary-color)" strokeWidth={3} />
-                                                <span style={{ fontSize: '0.8rem', fontWeight: 800, textAlign: 'center', lineHeight: 1.2 }}>Manage<br/>Tags</span>
-                                            </button>
-                                        </>
+                                        <button
+                                            onClick={() => setShowManageTagsModal(true)}
+                                            style={{ flex: 1, minHeight: '74px', background: 'rgba(249, 115, 22, 0.1)', border: '1px solid rgba(249, 115, 22, 0.2)', color: 'var(--primary-color)', padding: '10px 8px', borderRadius: '12px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                                        >
+                                            <TagIcon size={18} color="var(--primary-color)" strokeWidth={3} />
+                                            <span style={{ fontSize: '0.8rem', fontWeight: 800, textAlign: 'center', lineHeight: 1.2 }}>Manage<br/>Tags</span>
+                                        </button>
                                     )}
 
                                     {/* Select Button */}
@@ -579,10 +587,10 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                             </div>
                         )}
 
-                        {/* Rooms Grid (Only visible at Root) */}
-                        {isRoot && !isSelectionMode && effectiveFilter !== 'AllPhotos' && (effectiveFilter === 'All' || effectiveFilter === 'Rooms') && (
+                        {/* Rooms Grid */}
+                        {!isSelectionMode && effectiveFilter !== 'AllPhotos' && (effectiveFilter === 'All' || effectiveFilter === 'Rooms') && (
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem', marginBottom: '1.5rem' }}>
-                                {folders.map(folder => {
+                                {folders.filter(f => f.ParentFolderID === activeFolderId).map(folder => {
                                     const folderPhotos = photos.filter(p => p.FolderID === folder.FolderID);
                                     const coverPhoto = folderPhotos.length > 0 ? folderPhotos[folderPhotos.length - 1].ImageFile : null;
 

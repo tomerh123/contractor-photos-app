@@ -452,14 +452,15 @@ export const getAllFolders = async () => {
     return memoryCache.allFolders;
 };
 
-export const addProjectFolder = async (projectId, name) => {
+export const addProjectFolder = async (projectId, name, parentFolderId = null) => {
     const FolderID = `fld_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
     const newFolder = {
         FolderID,
         ProjectID: projectId,
         userId: getUid(),
         Name: name,
-        CreatedAt: new Date().toISOString()
+        CreatedAt: new Date().toISOString(),
+        ParentFolderID: parentFolderId
     };
     await setDoc(doc(firestore, 'folders', FolderID), newFolder);
     await touchProject(projectId);
