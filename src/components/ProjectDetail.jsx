@@ -475,14 +475,21 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                 {activeTab === 'GALLERY' && (
                     <>
                         {/* Row 1: Title */}
-                        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '2.5rem', marginTop: '0.5rem' }}>
-                            <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.7rem', fontWeight: 700, overflow: 'hidden' }}>
-                                {activeFolderId ? (
-                                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden' }}>
-                                        <FolderOpen size={26} color="var(--primary-color)" style={{ flexShrink: 0 }} />
-                                        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                            {folders.find(f => f.FolderID === activeFolderId)?.Name || 'Folder'}
-                                        </span>
+                        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '2.5rem', marginTop: '0.5rem', width: '100%' }}>
+                            {/* Left: Icon Spacer */}
+                            <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', paddingRight: '12px' }}>
+                                {activeFolderId && <FolderOpen size={26} color="var(--primary-color)" style={{ flexShrink: 0 }} />}
+                            </div>
+
+                            {/* Center: Title */}
+                            <h3 style={{ margin: 0, fontSize: '1.70rem', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'center', minWidth: 0 }}>
+                                {activeFolderId ? (folders.find(f => f.FolderID === activeFolderId)?.Name || 'Folder') : 'Photo Gallery'}
+                            </h3>
+
+                            {/* Right: Actions */}
+                            <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '6px', paddingLeft: '12px' }}>
+                                {activeFolderId && (
+                                    <>
                                         <button 
                                             onClick={() => {
                                                 const f = folders.find(x => x.FolderID === activeFolderId);
@@ -491,23 +498,19 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                                                     setNewFolderName(f.Name);
                                                 }
                                             }}
-                                            style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)', padding: '5px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: '4px', cursor: 'pointer' }}
+                                            style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)', padding: '5px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
                                         >
                                             <Edit2 size={14} />
                                         </button>
                                         <button 
                                             onClick={() => triggerDeleteFolder(activeFolderId)}
-                                            style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--danger)', padding: '5px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: '6px', cursor: 'pointer' }}
+                                            style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--danger)', padding: '5px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
                                         >
                                             <Trash2 size={14} />
                                         </button>
-                                    </span>
-                                ) : (
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <span>Photo Gallery</span>
-                                    </div>
+                                    </>
                                 )}
-                            </h3>
+                            </div>
                         </div>
 
                         {/* Row 2: Actions */}
