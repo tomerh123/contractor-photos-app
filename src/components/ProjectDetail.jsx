@@ -523,7 +523,16 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                                         <span style={{ fontSize: '0.8rem', fontWeight: 800, textAlign: 'center', lineHeight: 1.2 }}>New<br/>Folder</span>
                                     </button>
 
-                                    {/* Middle: Select */}
+                                    {/* Middle: Manage Tags */}
+                                    <button
+                                        onClick={() => setShowManageTagsModal(true)}
+                                        style={{ flex: 1, minHeight: '74px', background: 'rgba(249, 115, 22, 0.1)', border: '1px solid rgba(249, 115, 22, 0.2)', color: 'var(--primary-color)', padding: '10px 8px', borderRadius: '12px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                                    >
+                                        <TagIcon size={18} color="var(--primary-color)" strokeWidth={3} />
+                                        <span style={{ fontSize: '0.8rem', fontWeight: 800, textAlign: 'center', lineHeight: 1.2 }}>Manage<br/>Tags</span>
+                                    </button>
+
+                                    {/* Right: Select */}
                                     {(photos.length > 0 || folders.length > 0) && (
                                         <button
                                             onClick={() => setIsSelectionMode(true)}
@@ -547,15 +556,6 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                                             <span style={{ fontSize: '0.8rem', fontWeight: 800, textAlign: 'center', lineHeight: 1.2 }}>Select</span>
                                         </button>
                                     )}
-
-                                    {/* Right: Manage Tags */}
-                                    <button
-                                        onClick={() => setShowManageTagsModal(true)}
-                                        style={{ flex: 1, minHeight: '74px', background: 'rgba(249, 115, 22, 0.1)', border: '1px solid rgba(249, 115, 22, 0.2)', color: 'var(--primary-color)', padding: '10px 8px', borderRadius: '12px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-                                    >
-                                        <TagIcon size={18} color="var(--primary-color)" strokeWidth={3} />
-                                        <span style={{ fontSize: '0.8rem', fontWeight: 800, textAlign: 'center', lineHeight: 1.2 }}>Manage<br/>Tags</span>
-                                    </button>
                                 </>
                             ) : null}
                         </div>
