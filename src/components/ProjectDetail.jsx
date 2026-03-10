@@ -350,8 +350,16 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
 
     const displayedPhotos = effectiveFilter === 'AllPhotos'
         ? (activeSubTagFilter === 'All' 
-            ? [...photos].sort((a, b) => new Date(b.Timestamp) - new Date(a.Timestamp))
-            : photos.filter(p => p.Tags && p.Tags.includes(activeSubTagFilter)).sort((a, b) => new Date(b.Timestamp) - new Date(a.Timestamp))
+            ? [...photos].sort((a, b) => {
+                const timeA = new Date(a.ImportedAt || a.Timestamp);
+                const timeB = new Date(b.ImportedAt || b.Timestamp);
+                return timeB - timeA;
+            })
+            : photos.filter(p => p.Tags && p.Tags.includes(activeSubTagFilter)).sort((a, b) => {
+                const timeA = new Date(a.ImportedAt || a.Timestamp);
+                const timeB = new Date(b.ImportedAt || b.Timestamp);
+                return timeB - timeA;
+              })
           )
         : effectiveFilter === 'All' || effectiveFilter === 'Photos'
             ? activeFolderPhotos

@@ -246,6 +246,7 @@ export const addPhoto = async (photoData) => {
         PhotoID,
         userId: getUid(),
         Timestamp: new Date().toISOString(),
+        ImportedAt: new Date().toISOString(),
         Tags: [],
         ...photoData,
         ImageFile: imageUrl
