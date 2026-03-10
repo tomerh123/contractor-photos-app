@@ -167,6 +167,7 @@ const PunchListView = ({ projectId, onTodosChange }) => {
                                 flex: 1,
                                 fontSize: '1rem',
                                 color: 'var(--text-primary)',
+                                fontWeight: todo.IsCompleted ? 400 : 600,
                                 overflowWrap: 'break-word',
                                 wordBreak: 'break-word'
                             }}>
