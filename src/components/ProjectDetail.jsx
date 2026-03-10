@@ -30,6 +30,7 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
     const [activeFolderId, setActiveFolderId] = useState(initialFolderId || null);
     const [isSelectionMode, setIsSelectionMode] = useState(false);
     const [selectedPhotoIds, setSelectedPhotoIds] = useState(new Set());
+    const [selectedFolderIds, setSelectedFolderIds] = useState(new Set());
     const [showNewFolderModal, setShowNewFolderModal] = useState(false);
     const [newFolderName, setNewFolderName] = useState('');
     const [editingFolder, setEditingFolder] = useState(null);
@@ -152,16 +153,36 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
         setSelectedPhotoIds(newSet);
     };
 
-    const handleMovePhotos = async (targetFolderId) => {
+    const toggleFolderSelection = (folderId) => {
+        const newSet = new Set(selectedFolderIds);
+        if (newSet.has(folderId)) {
+            newSet.delete(folderId);
+        } else {
+            newSet.add(folderId);
+        }
+        setSelectedFolderIds(newSet);
+    };
+
+    const handleMoveItems = async (targetFolderId) => {
         setIsUploading(true);
         const photoIds = Array.from(selectedPhotoIds);
+        const folderIds = Array.from(selectedFolderIds);
 
-        await db.movePhotosToFolder(photoIds, targetFolderId);
+        const promises = [];
+        if (photoIds.length > 0) {
+            promises.push(db.movePhotosToFolder(photoIds, targetFolderId));
+        }
+        if (folderIds.length > 0) {
+            promises.push(db.moveFoldersToFolder(folderIds, targetFolderId, projectId));
+        }
+
+        await Promise.all(promises);
 
         setIsUploading(false);
         setShowMoveModal(false);
         setIsSelectionMode(false);
         setSelectedPhotoIds(new Set());
+        setSelectedFolderIds(new Set());
         if (targetFolderId) setActiveFolderId(targetFolderId);
     };
 
@@ -178,7 +199,11 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
             for (const pid of selectedPhotoIds) {
                 await db.deletePhoto(pid);
             }
+            for (const fid of selectedFolderIds) {
+                await db.deleteProjectFolder(fid);
+            }
             setSelectedPhotoIds(new Set());
+            setSelectedFolderIds(new Set());
             setIsSelectionMode(false);
         }
         setIsUploading(false);
@@ -463,8 +488,8 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                                         <span style={{ fontSize: '0.8rem', fontWeight: 800, textAlign: 'center', lineHeight: 1.2 }}>New<br/>Folder</span>
                                     </button>
 
-                                    {/* Middle: Select Photos */}
-                                    {photos.length > 0 && (
+                                    {/* Middle: Select */}
+                                    {(photos.length > 0 || folders.length > 0) && (
                                         <button
                                             onClick={() => setIsSelectionMode(true)}
                                             style={{ 
@@ -484,9 +509,7 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                                             }}
                                         >
                                             <CheckSquare size={18} color="white" strokeWidth={3} />
-                                            <span style={{ fontSize: '0.8rem', fontWeight: 800, textAlign: 'center', lineHeight: 1.1 }}>
-                                                Select<br/>Photos
-                                            </span>
+                                            <span style={{ fontSize: '0.8rem', fontWeight: 800, textAlign: 'center', lineHeight: 1.2 }}>Select</span>
                                         </button>
                                     )}
 
@@ -559,20 +582,37 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                         )}
 
                         {/* Rooms Grid */}
-                        {!isSelectionMode && effectiveFilter !== 'AllPhotos' && (effectiveFilter === 'All' || effectiveFilter === 'Rooms') && (
+                        {effectiveFilter !== 'AllPhotos' && (effectiveFilter === 'All' || effectiveFilter === 'Rooms') && (
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem', marginBottom: '1.5rem' }}>
                                 {folders.filter(f => (f.ParentFolderID || null) === activeFolderId).map(folder => {
                                     const folderPhotos = photos.filter(p => p.FolderID === folder.FolderID);
                                     const coverPhoto = folderPhotos.length > 0 ? folderPhotos[folderPhotos.length - 1].ImageFile : null;
+                                    const isSelected = selectedFolderIds.has(folder.FolderID);
 
                                     return (
                                         <div
                                             key={folder.FolderID}
                                             onClick={() => {
-                                                setActiveFolderId(folder.FolderID);
-                                                navigateTo('PROJECT_DETAIL', projectId, null, null, folder.FolderID);
+                                                if (isSelectionMode) {
+                                                    toggleFolderSelection(folder.FolderID);
+                                                } else {
+                                                    setActiveFolderId(folder.FolderID);
+                                                    navigateTo('PROJECT_DETAIL', projectId, null, null, folder.FolderID);
+                                                }
                                             }}
-                                            style={{ height: '110px', backgroundColor: 'var(--surface)', borderRadius: '12px', cursor: 'pointer', position: 'relative', overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
+                                            style={{ 
+                                                height: '110px', 
+                                                backgroundColor: 'var(--surface)', 
+                                                borderRadius: '12px', 
+                                                cursor: 'pointer', 
+                                                position: 'relative', 
+                                                overflow: 'hidden', 
+                                                boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                                                opacity: (isSelectionMode && !isSelected) ? 0.6 : 1,
+                                                transform: (isSelectionMode && isSelected) ? 'scale(0.92)' : 'scale(1)',
+                                                border: (isSelectionMode && isSelected) ? '3px solid var(--primary-color)' : 'none',
+                                                transition: 'all 0.1s ease-out'
+                                            }}
                                         >
                                             {coverPhoto ? (
                                                 <>
@@ -588,34 +628,57 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                                                 <div style={{ color: 'white', fontSize: '0.85rem', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textShadow: '0 2px 4px rgba(0,0,0,0.9)' }}>{folder.Name}</div>
                                             </div>
                                             
-                                            {/* Edit Button (Top Right) */}
-                                            <div 
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setEditingFolder(folder);
-                                                    setNewFolderName(folder.Name);
-                                                }}
-                                                style={{ 
+                                            {/* Selection Indicator */}
+                                            {isSelectionMode && (
+                                                <div style={{ 
                                                     position: 'absolute', 
                                                     top: '8px', 
                                                     right: '8px', 
-                                                    zIndex: 10, 
-                                                    background: 'rgba(0,0,0,0.4)', 
-                                                    backdropFilter: 'blur(4px)',
-                                                    borderRadius: '50%', 
-                                                    width: '26px', 
-                                                    height: '26px', 
-                                                    display: 'flex', 
-                                                    alignItems: 'center', 
+                                                    zIndex: 20, 
+                                                    width: '24px', 
+                                                    height: '24px', 
+                                                    borderRadius: '12px', 
+                                                    backgroundColor: isSelected ? 'var(--primary-color)' : 'rgba(0,0,0,0.3)', 
+                                                    border: '2px solid white',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
                                                     justifyContent: 'center',
-                                                    border: '1px solid rgba(255,255,255,0.2)'
-                                                }}
-                                            >
-                                                <Edit2 size={12} color="white" />
-                                            </div>
+                                                    boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                                                }}>
+                                                    {isSelected && <div style={{ width: '10px', height: '10px', backgroundColor: 'white', borderRadius: '50%' }} />}
+                                                </div>
+                                            )}
+
+                                            {/* Edit Button (Top Right) - Only show when NOT in selection mode */}
+                                            {!isSelectionMode && (
+                                                <div 
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setEditingFolder(folder);
+                                                        setNewFolderName(folder.Name);
+                                                    }}
+                                                    style={{ 
+                                                        position: 'absolute', 
+                                                        top: '8px', 
+                                                        right: '8px', 
+                                                        zIndex: 10, 
+                                                        background: 'rgba(0,0,0,0.4)', 
+                                                        backdropFilter: 'blur(4px)',
+                                                        borderRadius: '50%', 
+                                                        width: '26px', 
+                                                        height: '26px', 
+                                                        display: 'flex', 
+                                                        alignItems: 'center', 
+                                                        justifyContent: 'center',
+                                                        border: '1px solid rgba(255,255,255,0.2)'
+                                                    }}
+                                                >
+                                                    <Edit2 size={12} color="white" />
+                                                </div>
+                                            )}
 
                                             <div style={{ position: 'absolute', bottom: '8px', left: '8px', right: '8px', textAlign: 'center' }}>
-                                                <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: '0.75rem', fontWeight: 500 }}>
+                                                <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: '0.75rem', fontWeight: 500, textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>
                                                     {(() => {
                                                         const subFoldersCount = folders.filter(f => f.ParentFolderID === folder.FolderID).length;
                                                         const parts = [];
@@ -760,18 +823,18 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                     animation: 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
                     boxShadow: '0 -4px 12px rgba(0,0,0,0.2)'
                 }}>
-                    <span style={{ fontWeight: 600, fontSize: '1rem', color: 'white' }}>{selectedPhotoIds.size} Selected</span>
+                    <span style={{ fontWeight: 600, fontSize: '1rem', color: 'white' }}>{selectedPhotoIds.size + selectedFolderIds.size} Selected</span>
                     <div style={{ display: 'flex', gap: '12px' }}>
                         <button
                             className="btn btn-primary"
-                            disabled={selectedPhotoIds.size === 0}
+                            disabled={(selectedPhotoIds.size + selectedFolderIds.size) === 0}
                             onClick={() => setShowMoveModal(true)}
                             style={{ 
                                 padding: '10px 20px', 
                                 fontSize: '0.9rem', 
                                 borderRadius: '10px',
-                                background: selectedPhotoIds.size > 0 ? 'var(--primary-color)' : 'rgba(255,255,255,0.05)',
-                                color: selectedPhotoIds.size > 0 ? 'white' : 'rgba(255,255,255,0.2)',
+                                background: (selectedPhotoIds.size + selectedFolderIds.size) > 0 ? 'var(--primary-color)' : 'rgba(255,255,255,0.05)',
+                                color: (selectedPhotoIds.size + selectedFolderIds.size) > 0 ? 'white' : 'rgba(255,255,255,0.2)',
                                 border: 'none',
                                 fontWeight: 600
                             }}
@@ -782,6 +845,7 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                             className="btn"
                             onClick={() => {
                                 setSelectedPhotoIds(new Set());
+                                setSelectedFolderIds(new Set());
                                 setIsSelectionMode(false);
                             }}
                             style={{ 
@@ -798,13 +862,13 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                         </button>
                         <button
                             className="btn"
-                            disabled={selectedPhotoIds.size === 0}
+                            disabled={(selectedPhotoIds.size + selectedFolderIds.size) === 0}
                             onClick={triggerDeleteSelected}
                             style={{ 
                                 padding: '10px 20px', 
                                 fontSize: '0.9rem', 
-                                color: selectedPhotoIds.size > 0 ? '#ff453a' : 'rgba(255,255,255,0.2)', 
-                                border: '1px solid ' + (selectedPhotoIds.size > 0 ? '#ff453a' : 'rgba(255,255,255,0.1)'),
+                                color: (selectedPhotoIds.size + selectedFolderIds.size) > 0 ? '#ff453a' : 'rgba(255,255,255,0.2)', 
+                                border: '1px solid ' + ((selectedPhotoIds.size + selectedFolderIds.size) > 0 ? '#ff453a' : 'rgba(255,255,255,0.1)'),
                                 borderRadius: '10px',
                                 background: 'transparent',
                                 fontWeight: 600,
@@ -899,60 +963,90 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                     </div>
                 </div>
             )}
-
-            {/* Move Photos Modal */}
+                    {/* Move Items Modal */}
             {showMoveModal && (() => {
-                const selectedPhotosObjects = photos.filter(p => selectedPhotoIds.has(p.PhotoID));
-                const selectedFolderIds = new Set(selectedPhotosObjects.map(p => p.FolderID));
-                const isMultiFolder = selectedFolderIds.size > 1;
-                const singleSourceFolder = selectedFolderIds.size === 1 ? Array.from(selectedFolderIds)[0] : undefined;
+                const totalItems = selectedPhotoIds.size + selectedFolderIds.size;
+                
+                // Helper to check if a folder is a descendant of any selected folder
+                const isDescendantOfSelected = (folderId) => {
+                    let currentId = folderId;
+                    while (currentId) {
+                        if (selectedFolderIds.has(currentId)) return true;
+                        const folder = folders.find(f => f.FolderID === currentId);
+                        currentId = folder ? folder.ParentFolderID : null;
+                    }
+                    return false;
+                };
+
+                // Determine if we should show "Uncategorized Gallery" (Root)
+                // We show it if we are currently inside a folder OR moving items from different locations
+                const canMoveToRoot = activeFolderId !== null || selectedFolderIds.size > 0;
 
                 return (
                     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 4000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={() => setShowMoveModal(false)}>
                         <div style={{ backgroundColor: 'var(--surface)', borderTopLeftRadius: '24px', borderTopRightRadius: '24px', padding: '24px', width: '100%', maxWidth: '500px', maxHeight: '80dvh', overflowY: 'auto', animation: 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }} onClick={e => e.stopPropagation()}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                                <h3 style={{ margin: 0 }}>Move {selectedPhotoIds.size} Photos</h3>
+                                <h3 style={{ margin: 0 }}>Move {totalItems} {totalItems === 1 ? 'Item' : 'Items'}</h3>
                                 <button onClick={() => setShowMoveModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)' }}><X size={24} /></button>
                             </div>
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                {/* Show Uncategorized Gallery option if: 
-                                    1. Photos are from multiple folders 
-                                    2. Photos are from a single room (that is not Root) 
-                                */}
-                                {(isMultiFolder || (selectedFolderIds.size === 1 && singleSourceFolder !== null)) && (
+                                {canMoveToRoot && (
                                     <button
-                                        onClick={() => handleMovePhotos(null)}
+                                        onClick={() => handleMoveItems(null)}
                                         style={{ width: '100%', padding: '16px', borderRadius: '12px', border: '1px solid var(--border)', backgroundColor: 'var(--background)', color: 'var(--text-primary)', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', textAlign: 'left' }}
                                     >
                                         <FolderOpen size={20} color="var(--text-secondary)" />
                                         <div>
                                             <div style={{ fontWeight: 600 }}>Uncategorized Gallery</div>
-                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Remove from current room</div>
+                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Move to top level</div>
                                         </div>
                                     </button>
                                 )}
 
-                                {/* Only show other rooms if photos are all from ONE source */}
-                                {!isMultiFolder && folders
-                                    .filter(f => f.FolderID !== singleSourceFolder)
+                                {folders
+                                    .filter(f => !isDescendantOfSelected(f.FolderID)) // Prevent moving into self or subfolders
                                     .map(f => (
                                         <button
                                             key={f.FolderID}
-                                            onClick={() => handleMovePhotos(f.FolderID)}
-                                            style={{ width: '100%', padding: '16px', borderRadius: '12px', border: '1px solid var(--border)', backgroundColor: 'var(--background)', color: 'var(--text-primary)', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', textAlign: 'left' }}
+                                            onClick={() => handleMoveItems(f.FolderID)}
+                                            style={{ 
+                                                width: '100%', 
+                                                padding: '16px', 
+                                                borderRadius: '12px', 
+                                                border: '1px solid var(--border)', 
+                                                backgroundColor: 'var(--background)', 
+                                                color: 'var(--text-primary)', 
+                                                fontSize: '1rem', 
+                                                display: 'flex', 
+                                                alignItems: 'center', 
+                                                gap: '12px', 
+                                                cursor: 'pointer',
+                                                opacity: f.FolderID === activeFolderId ? 0.5 : 1,
+                                                pointerEvents: f.FolderID === activeFolderId ? 'none' : 'auto'
+                                            }}
                                         >
                                             <Folder size={20} color="var(--primary-color)" />
-                                            <span style={{ fontWeight: 600 }}>{f.Name}</span>
+                                            <div>
+                                                <div style={{ fontWeight: 600 }}>{f.Name}</div>
+                                                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                                    {(() => {
+                                                        const path = [];
+                                                        let cur = f.ParentFolderID;
+                                                        while (cur) {
+                                                            const p = folders.find(fold => fold.FolderID === cur);
+                                                            if (p) {
+                                                                path.unshift(p.Name);
+                                                                cur = p.ParentFolderID;
+                                                            } else break;
+                                                        }
+                                                        return path.length > 0 ? path.join(' / ') : 'Root';
+                                                    })()}
+                                                </div>
+                                            </div>
                                         </button>
                                     ))
                                 }
-
-                                {isMultiFolder && (
-                                    <p style={{ margin: '10px 0', fontSize: '0.85rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
-                                        Photos from multiple rooms can only be moved to the main gallery.
-                                    </p>
-                                )}
                             </div>
                         </div>
                     </div>
@@ -964,12 +1058,12 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 5000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
                     <div style={{ backgroundColor: 'var(--surface)', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '320px', border: '1px solid var(--border)' }}>
                         <h3 style={{ margin: '0 0 1rem 0', color: 'var(--text-primary)', fontSize: '1.1rem' }}>
-                            {deleteModalConfig.type === 'folder' ? 'Delete Room?' : 'Delete Photos?'}
+                            {deleteModalConfig.type === 'folder' ? 'Delete Room?' : 'Delete Items?'}
                         </h3>
                         <p style={{ margin: '0 0 1.5rem 0', color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.4' }}>
                             {deleteModalConfig.type === 'folder'
                                 ? 'Are you sure you want to delete this room? The photos inside will NOT be deleted, they will just be moved back to the main unassigned gallery.'
-                                : `Are you sure you want to permanently delete ${selectedPhotoIds.size} photo${selectedPhotoIds.size === 1 ? '' : 's'}? This action cannot be undone.`}
+                                : `Are you sure you want to permanently delete ${selectedPhotoIds.size} photo${selectedPhotoIds.size === 1 ? '' : 's'}${selectedFolderIds.size > 0 ? ` and ${selectedFolderIds.size} folder${selectedFolderIds.size === 1 ? '' : 's'}` : ''}? This action cannot be undone.`}
                         </p>
                         <div style={{ display: 'flex', gap: '1rem' }}>
                             <button

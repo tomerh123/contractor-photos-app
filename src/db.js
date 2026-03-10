@@ -640,6 +640,20 @@ export const movePhotosToFolder = async (photoIds, folderId) => {
     return true;
 };
 
+export const moveFoldersToFolder = async (folderIds, targetFolderId, projectId) => {
+    for (const fid of folderIds) {
+        const docRef = doc(firestore, 'folders', fid);
+        if (targetFolderId) {
+            await updateDoc(docRef, { ParentFolderID: targetFolderId });
+        } else {
+            await updateDoc(docRef, { ParentFolderID: deleteField() });
+        }
+    }
+    clearDBCache();
+    if (projectId) await touchProject(projectId);
+    return true;
+};
+
 // --- Todos ---
 export const getTodosForProject = async (projectId) => {
     const q = query(collection(firestore, 'todos'), where("userId", "==", getUid()), where("ProjectID", "==", projectId));
