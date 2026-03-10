@@ -590,7 +590,7 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                         {/* Rooms Grid */}
                         {!isSelectionMode && effectiveFilter !== 'AllPhotos' && (effectiveFilter === 'All' || effectiveFilter === 'Rooms') && (
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem', marginBottom: '1.5rem' }}>
-                                {folders.filter(f => f.ParentFolderID === activeFolderId).map(folder => {
+                                {folders.filter(f => (f.ParentFolderID || null) === activeFolderId).map(folder => {
                                     const folderPhotos = photos.filter(p => p.FolderID === folder.FolderID);
                                     const coverPhoto = folderPhotos.length > 0 ? folderPhotos[folderPhotos.length - 1].ImageFile : null;
 
