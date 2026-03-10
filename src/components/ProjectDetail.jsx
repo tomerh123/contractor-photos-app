@@ -358,7 +358,7 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                         className="btn" 
                         onClick={() => {
                             if (activeTab === 'PUNCHLIST') {
-                                navigateTo(returnView);
+                                setActiveTab('GALLERY');
                             } else if (activeFolderId) {
                                 const currentFolder = folders.find(f => f.FolderID === activeFolderId);
                                 setActiveFolderId(currentFolder?.ParentFolderID || null);
