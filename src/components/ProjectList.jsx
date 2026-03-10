@@ -43,8 +43,6 @@ const ProjectList = ({ navigateTo }) => {
     const [newLocation, setNewLocation] = useState('');
     const [newLat, setNewLat] = useState(null);
     const [newLon, setNewLon] = useState(null);
-    const [nearbyProject, setNearbyProject] = useState(null);
-    const [isLocating, setIsLocating] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [activeFilter, setActiveFilter] = useState('Recent');
     const [activeTab, setActiveTab] = useState('Active'); // 'Active' or 'Archived'
@@ -108,89 +106,15 @@ const ProjectList = ({ navigateTo }) => {
         setNewLon(lon !== undefined ? lon : null);
     };
 
-    // Haversine formula for distance in meters
-    const getDistance = (lat1, lon1, lat2, lon2) => {
-        const R = 6371e3; // metres
-        const φ1 = lat1 * Math.PI / 180;
-        const φ2 = lat2 * Math.PI / 180;
-        const Δφ = (lat2 - lat1) * Math.PI / 180;
-        const Δλ = (lon2 - lon1) * Math.PI / 180;
-
-        const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-            Math.cos(φ1) * Math.cos(φ2) *
-            Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        return R * c;
-    };
 
     const handleGlobalCameraClick = () => {
         setSelectorMode('CAMERA');
-        setIsLocating(true);
         setShowCameraProjectSelector(true);
-        setNearbyProject(null);
-
-        if ('geolocation' in navigator) {
-            navigator.geolocation.getCurrentPosition((position) => {
-                const userLat = position.coords.latitude;
-                const userLon = position.coords.longitude;
-
-                let closest = null;
-                let minDistance = 15000; // max radius in meters (increased to 15km to account for desktop IP location inaccuracy)
-
-                projects.filter(p => !p.ArchivedAt).forEach(p => {
-                    if (p.Lat && p.Lon) {
-                        const dist = getDistance(userLat, userLon, p.Lat, p.Lon);
-                        if (dist < minDistance) {
-                            minDistance = dist;
-                            closest = p;
-                        }
-                    }
-                });
-
-                setNearbyProject(closest);
-                setIsLocating(false);
-            }, (error) => {
-                console.warn('Geolocation error:', error);
-                setIsLocating(false);
-            }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
-        } else {
-            setIsLocating(false);
-        }
     };
 
     const handleGlobalImportClick = () => {
         setSelectorMode('IMPORT');
-        setIsLocating(true);
         setShowCameraProjectSelector(true);
-        setNearbyProject(null);
-
-        if ('geolocation' in navigator) {
-            navigator.geolocation.getCurrentPosition((position) => {
-                const userLat = position.coords.latitude;
-                const userLon = position.coords.longitude;
-
-                let closest = null;
-                let minDistance = 15000;
-
-                projects.filter(p => !p.ArchivedAt).forEach(p => {
-                    if (p.Lat && p.Lon) {
-                        const dist = getDistance(userLat, userLon, p.Lat, p.Lon);
-                        if (dist < minDistance) {
-                            minDistance = dist;
-                            closest = p;
-                        }
-                    }
-                });
-
-                setNearbyProject(closest);
-                setIsLocating(false);
-            }, (error) => {
-                console.warn('Geolocation error:', error);
-                setIsLocating(false);
-            }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
-        } else {
-            setIsLocating(false);
-        }
     };
 
     const handleImportPhoto = async (e) => {
@@ -470,45 +394,7 @@ const ProjectList = ({ navigateTo }) => {
                                 </p>
                             ) : (
                                 <>
-                                    {isLocating && (
-                                        <div style={{ padding: '0.8rem', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                                            <LoadingSpinner fullScreen={false} size="16px" message="Detecting nearby projects..." />
-                                        </div>
-                                    )}
-
-                                    {nearbyProject && (
-                                        <button
-                                            onClick={() => {
-                                                setShowCameraProjectSelector(false);
-                                                if (selectorMode === 'CAMERA') {
-                                                    navigateTo('CAMERA', nearbyProject.ProjectID);
-                                                } else {
-                                                    setTargetProjectId(nearbyProject.ProjectID);
-                                                    fileInputRef.current?.click();
-                                                }
-                                            }}
-                                            style={{
-                                                display: 'flex', alignItems: 'center', textAlign: 'left', padding: '1rem',
-                                                backgroundColor: 'rgba(34, 197, 94, 0.05)',
-                                                border: '1px solid rgba(34, 197, 94, 0.5)',
-                                                borderRadius: '12px', cursor: 'pointer', width: '100%',
-                                                position: 'relative', overflow: 'hidden'
-                                            }}
-                                        >
-                                            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', backgroundColor: '#22c55e' }}></div>
-                                            <span style={{ marginRight: '1rem', color: '#22c55e' }}>
-                                                <MapPin size={24} />
-                                            </span>
-                                            <div>
-                                                <div style={{ fontWeight: 'bold', color: 'var(--text-primary)', fontSize: '1.05rem' }}>{nearbyProject.ProjectName}</div>
-                                                <div style={{ fontSize: '0.85rem', color: '#22c55e', marginTop: '0.2rem', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
-                                                    📍 You are here
-                                                </div>
-                                            </div>
-                                        </button>
-                                    )}
-
-                                    {projects.filter(p => !p.ArchivedAt && (!nearbyProject || p.ProjectID !== nearbyProject.ProjectID)).map(p => (
+                                    {projects.filter(p => !p.ArchivedAt).map(p => (
                                         <button
                                             key={p.ProjectID}
                                             onClick={() => {
