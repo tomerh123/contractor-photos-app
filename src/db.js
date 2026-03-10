@@ -172,7 +172,7 @@ export const getPhotosForProject = async (projectId) => {
     if (memoryCache.projectPhotos[projectId]) return memoryCache.projectPhotos[projectId];
     const q = query(collection(firestore, 'photos'), where("userId", "==", getUid()), where("ProjectID", "==", projectId));
     const snapshot = await getDocs(q);
-    const photos = snapshot.docs.map(doc => doc.data());
+    const photos = snapshot.docs.map(doc => ({ ...doc.data(), PhotoID: doc.id }));
     memoryCache.projectPhotos[projectId] = photos.sort((a, b) => {
         const timeA = a.Timestamp ? new Date(a.Timestamp).getTime() : 0;
         const timeB = b.Timestamp ? new Date(b.Timestamp).getTime() : 0;
@@ -184,8 +184,14 @@ export const getPhotosForProject = async (projectId) => {
 export const subscribeToPhotosForProject = (projectId, callback) => {
     const q = query(collection(firestore, 'photos'), where("userId", "==", getUid()), where("ProjectID", "==", projectId));
     return onSnapshot(q, (snapshot) => {
-        const photos = snapshot.docs.map(doc => doc.data());
-        const sortedPhotos = photos.sort((a, b) => {
+        const photos = snapshot.docs.map(doc => ({ ...doc.data(), PhotoID: doc.id }));
+        
+        // Final safety deduplication by ID
+        const uniqueMap = new Map();
+        photos.forEach(p => uniqueMap.set(p.PhotoID, p));
+        const uniquePhotos = Array.from(uniqueMap.values());
+
+        const sortedPhotos = uniquePhotos.sort((a, b) => {
             const timeA = a.Timestamp ? new Date(a.Timestamp).getTime() : 0;
             const timeB = b.Timestamp ? new Date(b.Timestamp).getTime() : 0;
             return timeB - timeA;
@@ -199,7 +205,7 @@ export const getAllPhotos = async () => {
     if (memoryCache.allPhotos) return memoryCache.allPhotos;
     const q = query(collection(firestore, 'photos'), where("userId", "==", getUid()));
     const snapshot = await getDocs(q);
-    const photos = snapshot.docs.map(doc => doc.data());
+    const photos = snapshot.docs.map(doc => ({ ...doc.data(), PhotoID: doc.id }));
     memoryCache.allPhotos = photos.sort((a, b) => {
         const timeA = a.Timestamp ? new Date(a.Timestamp).getTime() : 0;
         const timeB = b.Timestamp ? new Date(b.Timestamp).getTime() : 0;
@@ -253,18 +259,15 @@ export const addPhoto = async (photoData) => {
 
     await setDoc(doc(firestore, 'photos', PhotoID), newPhoto);
 
-    if (photoData.ProjectID && memoryCache.projectPhotos[photoData.ProjectID]) {
-        memoryCache.projectPhotos[photoData.ProjectID].unshift(newPhoto);
-    }
-    if (memoryCache.allPhotos) {
-        memoryCache.allPhotos.unshift(newPhoto);
-    }
+    // No manual cache update here; onSnapshot listeners will catch it.
+    // Clearing cache for non-listening views (like AllPhotos)
+    memoryCache.allPhotos = null;
 
     if (photoData.ProjectID) {
         await touchProject(photoData.ProjectID);
     }
 
-    return newPhoto;
+    return { ...newPhoto, PhotoID };
 };
 
 export const updatePhotoDetails = async (photoId, newNotes, newTags) => {
@@ -461,7 +464,7 @@ export const getAllFolders = async () => {
     if (memoryCache.allFolders) return memoryCache.allFolders;
     const q = query(collection(firestore, 'folders'), where("userId", "==", getUid()));
     const snapshot = await getDocs(q);
-    const folders = snapshot.docs.map(doc => doc.data());
+    const folders = snapshot.docs.map(doc => ({ ...doc.data(), FolderID: doc.id }));
     memoryCache.allFolders = folders;
     return memoryCache.allFolders;
 };
@@ -478,7 +481,7 @@ export const addProjectFolder = async (projectId, name, parentFolderId = null) =
     };
     await setDoc(doc(firestore, 'folders', FolderID), newFolder);
     await touchProject(projectId);
-    return newFolder;
+    return { ...newFolder, FolderID };
 };
 
 export const updateProjectFolder = async (folderId, newName) => {
