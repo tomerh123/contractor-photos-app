@@ -83,7 +83,7 @@ export const getProject = async (id) => {
         memoryCache.projects[id] = docSnap.data();
         return memoryCache.projects[id];
     }
-    return undefined;
+    return null;
 };
 
 export const addProject = async (projectData) => {

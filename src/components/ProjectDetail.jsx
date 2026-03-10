@@ -15,7 +15,7 @@ import { useApp } from '../AppContext';
 const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId, returnView = 'HOME' }) => {
     const { currentUser, updateCurrentUser } = useApp();
     const [activeTab, setActiveTab] = useState('GALLERY');
-    const [project, setProject] = useState(() => db.getCachedProject(projectId));
+    const [project, setProject] = useState(() => db.getCachedProject(projectId) || undefined);
     const [photos, setPhotos] = useState(() => db.getCachedPhotos(projectId) || []);
     const [loading, setLoading] = useState(() => {
         return !(db.getCachedProject(projectId) && db.getCachedPhotos(projectId));
@@ -277,7 +277,7 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
     }, [initialPhotoId]);
 
     if (loading || project === undefined) return <LoadingSpinner message="Loading project details..." padding="2rem" />;
-    if (!project) return <div className="content-pad">Project not found.</div>;
+    if (project === null) return <div className="content-pad">Project not found.</div>;
 
     const activeFolderPhotos = activeFolderId
         ? photos.filter(p => p.FolderID === activeFolderId)
