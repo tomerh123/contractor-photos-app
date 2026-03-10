@@ -511,6 +511,7 @@ export const updateProjectFolder = async (folderId, newName) => {
 
 export const deleteProjectFolder = async (folderId) => {
     // Phase 1: Identify all sub-folders recursively
+    memoryCache.allFolders = null; 
     const allFolders = await getAllFolders();
     const folderIdsToDelete = [folderId];
     

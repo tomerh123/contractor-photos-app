@@ -659,7 +659,7 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                                                 <Edit2 size={12} color="white" />
                                             </div>
 
-                                            <div style={{ position: 'absolute', bottom: '8px', left: '8px', right: '8px' }}>
+                                            <div style={{ position: 'absolute', bottom: '8px', left: '8px', right: '8px', textAlign: 'center' }}>
                                                 <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: '0.75rem', fontWeight: 500 }}>
                                                     {(() => {
                                                         const subFoldersCount = folders.filter(f => f.ParentFolderID === folder.FolderID).length;
