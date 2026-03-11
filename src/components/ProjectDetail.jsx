@@ -133,11 +133,12 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
 
             if (!result || !result.photos || result.photos.length === 0) return;
 
-            setIsUploading(true);
-            const identifiers = result.photos.map(p => p.identifier).filter(Boolean);
+            const identifiers = result.photos.map(p => p.identifier || p.id).filter(Boolean);
             
-            // DEBUG ALERT
-            alert(`Picked ${result.photos.length} photos. Found ${identifiers.length} identifiers.`);
+            // DEBUG ALERT - inspecting the object structure
+            if (result.photos.length > 0) {
+                alert(`DEBUG: Photo[0] keys: ${Object.keys(result.photos[0]).join(', ')}\nFull: ${JSON.stringify(result.photos[0])}`);
+            }
             
             try {
                 let i = 0;
@@ -198,11 +199,14 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                     await db.processAndAddPhoto(file, projectId, activeFolderId);
                 }
 
+                // Show methods used regardless of identifiers
+                alert(`Methods used: ${Array.from(successMethods).join(', ')}`);
+
                 if (identifiers.length > 0) {
                     setImportedPhotoIds(identifiers);
                     setShowDeleteFromGalleryModal(true);
-                    // Single alert to tell the user which methods worked
-                    alert(`Success! Methods used: ${Array.from(successMethods).join(', ')}`);
+                } else {
+                    alert("Note: No identifiers found, skipping deletion prompt.");
                 }
             } catch (err) {
                 console.error("Error processing picked images:", err);
