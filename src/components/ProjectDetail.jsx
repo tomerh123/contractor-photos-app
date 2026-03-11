@@ -1092,12 +1092,12 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 5000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
                     <div style={{ backgroundColor: 'var(--surface)', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '320px', border: '1px solid var(--border)' }}>
                         <h3 style={{ margin: '0 0 1rem 0', color: 'var(--text-primary)', fontSize: '1.1rem' }}>
-                            {deleteModalConfig.type === 'project' ? 'Delete Project?' :
+                            {deleteModalConfig.type === 'project' ? 'Archive Project?' :
                              deleteModalConfig.type === 'folder' ? 'Delete Room?' : 'Delete Items?'}
                         </h3>
                         <p style={{ margin: '0 0 1.5rem 0', color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.4' }}>
                             {deleteModalConfig.type === 'project' ? (
-                                <>Are you sure you want to delete <strong>{project.ProjectName}</strong>? This action will archive the project and all its contents.</>
+                                <>Are you sure you want to archive <strong>{project.ProjectName}</strong>? This action will move the project and all its contents to your archive.</>
                             ) : deleteModalConfig.type === 'folder' ? (
                                 (() => {
                                     const folderToDelete = folders.find(f => f.FolderID === deleteModalConfig.folderId);
@@ -1124,7 +1124,7 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                                 style={{ flex: 1, padding: '0.8rem', backgroundColor: 'var(--danger)', fontSize: '0.9rem' }}
                                 disabled={isUploading}
                             >
-                                {isUploading ? 'Deleting...' : 'Delete'}
+                                {isUploading ? 'Processing...' : (deleteModalConfig.type === 'project' ? 'Archive' : 'Delete')}
                             </button>
                         </div>
                     </div>
