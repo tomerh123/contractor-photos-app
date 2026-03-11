@@ -126,31 +126,30 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
 
     const handleNativePick = async () => {
         try {
-            // Use Media plugin to get photos with persistent identifiers
-            const result = await Media.getMedias({
-                quantity: 0, // 0 means multiple selection allowed
-                types: 'photos'
+            const result = await Camera.pickImages({
+                quality: 80,
+                limit: 0
             });
 
-            if (!result || !result.medias || result.medias.length === 0) return;
+            if (!result || !result.photos || result.photos.length === 0) return;
 
             setIsUploading(true);
-            const identifiers = result.medias.map(m => m.identifier).filter(Boolean);
+            // On some versions/configs, identifier might be missing. Try id as well.
+            const identifiers = result.photos.map(p => p.identifier || p.id).filter(Boolean);
             
             try {
-                for (const photo of result.medias) {
+                for (const photo of result.photos) {
                     let blob;
                     
-                    // Use the identifier as the path for Filesystem or try the identifier directly
-                    // Note: Media plugin results have 'identifier'. We use Filesystem to read it.
+                    // Use Filesystem as the primary loader as it proved most reliable
                     try {
                         const fileData = await Filesystem.readFile({
-                            path: photo.identifier // On iOS, the identifier IS the identifier
+                            path: photo.path // photo.path is the file:/// path
                         });
                         const base64Response = await fetch(`data:image/jpeg;base64,${fileData.data}`);
                         blob = await base64Response.blob();
                     } catch (fsErr) {
-                        console.error("FS Read failed during Media import:", fsErr);
+                        console.error("FS Read failed during Camera import:", fsErr);
                     }
 
                     if (blob) {
