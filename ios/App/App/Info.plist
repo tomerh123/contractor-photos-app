@@ -24,6 +24,8 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>TrueSite needs your camera to document construction progress on your projects.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>TrueSite needs permission to use your microphone when recording video updates for projects.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>TrueSite needs permission to save project blueprints and photos directly to your camera roll.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
