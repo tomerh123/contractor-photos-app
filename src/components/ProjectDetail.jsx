@@ -487,7 +487,7 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
 
                             {/* Center: Title */}
                             <h3 style={{ margin: 0, fontSize: '1.70rem', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'center', minWidth: 0 }}>
-                                {activeFolderId ? (folders.find(f => f.FolderID === activeFolderId)?.Name || 'Folder') : 'Photo Gallery'}
+                                {activeFolderId ? (folders.find(f => f.FolderID === activeFolderId)?.Name || 'Folder') : 'Main Project Gallery'}
                             </h3>
 
                             {/* Right: Actions */}
