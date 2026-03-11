@@ -138,6 +138,7 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
             
             try {
                 let i = 0;
+                let successMethods = new Set();
                 for (const photo of result.photos) {
                     i++;
                     let blob;
@@ -148,6 +149,7 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                         const response = await fetch(photo.webPath);
                         if (response.ok) {
                             blob = await response.blob();
+                            successMethods.add("Direct Fetch");
                         } else {
                             lastError = `HTTP ${response.status}`;
                         }
@@ -162,6 +164,7 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                             const response = await fetch(src);
                             if (response.ok) {
                                 blob = await response.blob();
+                                successMethods.add("ConvertFileSrc");
                             } else {
                                 lastError = `Convert HTTP ${response.status}`;
                             }
@@ -178,6 +181,7 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                             });
                             const base64Response = await fetch(`data:image/jpeg;base64,${fileData.data}`);
                             blob = await base64Response.blob();
+                            successMethods.add("Filesystem");
                         } catch (e) {
                             lastError = `Filesystem: ${e.message}`;
                         }
@@ -194,6 +198,8 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                 if (identifiers.length > 0) {
                     setImportedPhotoIds(identifiers);
                     setShowDeleteFromGalleryModal(true);
+                    // Single alert to tell the user which methods worked
+                    alert(`Success! Methods used: ${Array.from(successMethods).join(', ')}`);
                 }
             } catch (err) {
                 console.error("Error processing picked images:", err);
