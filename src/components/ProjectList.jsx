@@ -203,7 +203,7 @@ const ProjectList = ({ navigateTo }) => {
             <div style={{ padding: '0 1.5rem' }}>
                 {/* Greeting */}
                 <h1 style={{ fontSize: '1.8rem', marginBottom: '1rem', textAlign: 'center' }}>
-                    Welcome, {currentUser?.Name ? currentUser.Name.split(' ')[0] : 'Tomer'}
+                    Hello, {currentUser?.Name ? currentUser.Name.split(' ')[0] : 'Tomer'}
                 </h1>
 
                 {/* Workspace Section (Elevated to Top) */}
