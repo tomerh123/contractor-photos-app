@@ -128,10 +128,19 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
 
     const handleNativePick = async () => {
         try {
-            const result = await Camera.pickImages({
-                quality: 80,
-                limit: 0
-            });
+            const isIOS = Capacitor.getPlatform() === 'ios' || /iPad|iPhone|iPod/.test(navigator.userAgent);
+            let result;
+
+            if (isIOS && NativePhotoDeleter) {
+                // Use our custom picker to guarantee exact asset identifiers
+                result = await NativePhotoDeleter.pickImages();
+            } else {
+                // Fallback to standard generic picker for web/android
+                result = await Camera.pickImages({
+                    quality: 80,
+                    limit: 0
+                });
+            }
 
             if (!result || !result.photos || result.photos.length === 0) return;
 
@@ -140,17 +149,27 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
             
             try {
                 // We keep track of exact identifiers directly from the Camera output
-                // The newest picker sets it as .identifier or .exif.CreationDate if available
                 const identifiersToAsk = [];
 
                 const uploadPromises = result.photos.map(async (photo) => {
                     let blob;
                     try {
-                        const fileData = await Filesystem.readFile({
-                            path: photo.path
-                        });
-                        const base64Response = await fetch(`data:image/jpeg;base64,${fileData.data}`);
-                        blob = await base64Response.blob();
+                        if (isIOS && photo.path) {
+                           // Ensure it's prefixed with file:// so Capacitor knows it's an absolute native path
+                           const safePath = photo.path.startsWith('file://') ? photo.path : `file://${photo.path}`;
+                           const response = await fetch(safePath);
+                           blob = await response.blob();
+                        } else if (photo.dataUrl) {
+                           // Sometimes fallback base64
+                           const base64Data = photo.dataUrl.split(',')[1] || photo.dataUrl;
+                           const base64Response = await fetch(`data:image/jpeg;base64,${base64Data}`);
+                           blob = await base64Response.blob();
+                        } else {
+                           // Standard Camera picker
+                           const fileData = await Filesystem.readFile({ path: photo.path });
+                           const base64Response = await fetch(`data:image/jpeg;base64,${fileData.data}`);
+                           blob = await base64Response.blob();
+                        }
                     } catch (fsErr) {
                         console.error("FS Read failed during Camera import:", fsErr);
                     }
