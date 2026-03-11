@@ -3,7 +3,7 @@ import { AnimatePresence } from 'framer-motion';
 import * as db from '../db';
 import PhotoViewer from './PhotoViewer';
 import { 
-    ArrowLeft, Camera, Upload, Sparkles, MapPin, Image as ImageIcon, CheckSquare, 
+    ArrowLeft, Camera as CameraIcon, Upload, Sparkles, MapPin, Image as ImageIcon, CheckSquare, 
     Folder, Plus, CheckCircle2, Circle, FolderOpen, X, MoreVertical, Trash2, 
     ChevronDown, Check, Tag as TagIcon, Edit2
 } from 'lucide-react';
@@ -130,30 +130,36 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                 limit: 0
             });
 
-            if (result.photos && result.photos.length > 0) {
-                setIsUploading(true);
-                const identifiers = result.photos.map(p => p.identifier).filter(Boolean);
-                
-                try {
-                    await Promise.all(result.photos.map(async (photo) => {
-                        const response = await fetch(photo.webPath);
-                        const blob = await response.blob();
-                        const file = new File([blob], `import_${Date.now()}.jpg`, { type: 'image/jpeg' });
-                        return db.processAndAddPhoto(file, projectId, activeFolderId);
-                    }));
+            if (!result || !result.photos || result.photos.length === 0) return;
 
-                    if (identifiers.length > 0) {
-                        setImportedPhotoIds(identifiers);
-                        setShowDeleteFromGalleryModal(true);
-                    }
-                } catch (err) {
-                    console.error("Error processing picked images:", err);
-                } finally {
-                    setIsUploading(false);
+            setIsUploading(true);
+            const identifiers = result.photos.map(p => p.identifier).filter(Boolean);
+            
+            try {
+                // Sequential processing is safer for memory on mobile than Promise.all
+                for (const photo of result.photos) {
+                    const src = Capacitor.convertFileSrc(photo.webPath);
+                    const response = await fetch(src);
+                    const blob = await response.blob();
+                    const file = new File([blob], `import_${Date.now()}.jpg`, { type: 'image/jpeg' });
+                    await db.processAndAddPhoto(file, projectId, activeFolderId);
                 }
+
+                if (identifiers.length > 0) {
+                    setImportedPhotoIds(identifiers);
+                    setShowDeleteFromGalleryModal(true);
+                }
+            } catch (err) {
+                console.error("Error processing picked images:", err);
+                alert("Could not process one or more photos: " + err.message);
+            } finally {
+                setIsUploading(false);
             }
         } catch (err) {
             console.error("Error picking images:", err);
+            if (err.message && !err.message.includes('User cancelled')) {
+                alert("Error picking images: " + err.message);
+            }
         }
     };
 
@@ -967,7 +973,7 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
 
             {!isSelectionMode && (
                 <div className="floating-dock">
-                    <button className="dock-btn main" onClick={() => navigateTo('CAMERA', projectId, null, null, activeFolderId)}><Camera size={26} /></button>
+                    <button className="dock-btn main" onClick={() => navigateTo('CAMERA', projectId, null, null, activeFolderId)}><CameraIcon size={26} /></button>
                     <div style={{ width: '1px', height: '30px', backgroundColor: 'var(--border)' }}></div>
                     <button 
                         className="dock-btn" 
