@@ -11,10 +11,12 @@ import LoadingSpinner from './LoadingSpinner';
 
 import PunchListView from './PunchListView';
 import { useApp } from '../AppContext';
-import { Capacitor } from '@capacitor/core';
+import { Capacitor, registerPlugin } from '@capacitor/core';
 import { Camera } from '@capacitor/camera';
 import { Media } from '@capacitor-community/media';
 import { Filesystem } from '@capacitor/filesystem';
+
+const NativePhotoDeleter = registerPlugin('NativePhotoDeleter');
 
 const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId, returnView = 'HOME' }) => {
     const { currentUser, updateCurrentUser } = useApp();
@@ -137,7 +139,8 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
             const collectedTimestamps = [];
             
             try {
-                for (const photo of result.photos) {
+                // Process uploads concurrently instead of sequentially
+                const uploadPromises = result.photos.map(async (photo) => {
                     let blob;
                     try {
                         const fileData = await Filesystem.readFile({
@@ -150,14 +153,21 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                     }
 
                     if (blob) {
-                        const file = new File([blob], `import_${Date.now()}.jpg`, { type: 'image/jpeg' });
+                        // Use a random suffix to avoid file name collisions when importing simultaneously
+                        const fileName = `import_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
+                        const file = new File([blob], fileName, { type: 'image/jpeg' });
                         const addedPhoto = await db.processAndAddPhoto(file, projectId, activeFolderId);
                         if (addedPhoto && addedPhoto.Timestamp) {
-                            collectedTimestamps.push(new Date(addedPhoto.Timestamp).getTime());
+                            return new Date(addedPhoto.Timestamp).getTime();
                         }
                     }
-                }
+                    return null;
+                });
 
+                const timestamps = await Promise.all(uploadPromises);
+                timestamps.forEach(ts => {
+                    if (ts) collectedTimestamps.push(ts);
+                });
                 // Metadata Match Strategy to find identifiers
                 if (collectedTimestamps.length > 0) {
                     try {
@@ -213,8 +223,14 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                 alert("No photo IDs found to delete.");
                 return;
             }
-            // alert(`Attempting to delete ${importedPhotoIds.length} photos...`);
-            await Media.deletePhotos({ identifiers: importedPhotoIds });
+            
+            const isIOS = Capacitor.getPlatform() === 'ios' || /iPad|iPhone|iPod/.test(navigator.userAgent);
+            
+            if (isIOS && NativePhotoDeleter) {
+                await NativePhotoDeleter.deletePhotos({ identifiers: importedPhotoIds });
+            } else {
+                await Media.deletePhotos({ identifiers: importedPhotoIds });
+            }
         } catch (err) {
             console.error("Error deleting from gallery:", err);
             alert("Deletion failed: " + err.message);

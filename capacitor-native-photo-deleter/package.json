@@ -1,0 +1,19 @@
+{
+  "name": "capacitor-native-photo-deleter",
+  "version": "1.0.0",
+  "description": "Custom Capacitor plugin to delete photos",
+  "main": "dist/plugin.cjs.js",
+  "module": "dist/plugin.js",
+  "types": "dist/esm/index.d.ts",
+  "scripts": {
+    "build": "echo 'No build required for pure native'"
+  },
+  "capacitor": {
+    "ios": {
+      "src": "ios"
+    }
+  },
+  "dependencies": {
+    "@capacitor/core": "^6.0.0"
+  }
+}

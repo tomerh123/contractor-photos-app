@@ -10,6 +10,8 @@ PODS:
   - CapacitorFilesystem (8.1.2):
     - Capacitor
     - IONFilesystemLib (~> 1.1.1)
+  - CapacitorNativePhotoDeleter (1.0.0):
+    - Capacitor
   - CapacitorShare (8.0.1):
     - Capacitor
   - IONFilesystemLib (1.1.1)
@@ -23,6 +25,7 @@ DEPENDENCIES:
   - "CapacitorCommunityMedia (from `../../node_modules/@capacitor-community/media`)"
   - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
   - "CapacitorFilesystem (from `../../node_modules/@capacitor/filesystem`)"
+  - CapacitorNativePhotoDeleter (from `../../capacitor-native-photo-deleter`)
   - "CapacitorShare (from `../../node_modules/@capacitor/share`)"
 
 SPEC REPOS:
@@ -41,6 +44,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@capacitor/ios"
   CapacitorFilesystem:
     :path: "../../node_modules/@capacitor/filesystem"
+  CapacitorNativePhotoDeleter:
+    :path: "../../capacitor-native-photo-deleter"
   CapacitorShare:
     :path: "../../node_modules/@capacitor/share"
 
@@ -50,10 +55,11 @@ SPEC CHECKSUMS:
   CapacitorCommunityMedia: da5c6177f2f0bc7ab88a574934914257e71cc597
   CapacitorCordova: e8b76fd95fc1e157775abc484c59cc0de464095d
   CapacitorFilesystem: 2db285a1ac6e475cc27cae2e1bea999000f9e2be
+  CapacitorNativePhotoDeleter: 399a76a2a35a3baf10fd0d86763fd2107af4a4f1
   CapacitorShare: 0c58305114538568059bfc07111f22dcb9cb2a82
   IONFilesystemLib: dfa8706539ac9ab77ccfd6e5b3830ce9b5e57f6c
   SDWebImage: e9fc87c1aab89a8ab1bbd74eba378c6f53be8abf
 
-PODFILE CHECKSUM: 6c313a0baf30f2aaa911ae122ea848450fabe049
+PODFILE CHECKSUM: e93aef8ec35e435cfe7d5e2268397b985618b875
 
 COCOAPODS: 1.16.2
