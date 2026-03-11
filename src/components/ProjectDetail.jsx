@@ -209,9 +209,15 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
 
     const confirmGalleryDeletion = async () => {
         try {
+            if (importedPhotoIds.length === 0) {
+                alert("No photo IDs found to delete.");
+                return;
+            }
+            // alert(`Attempting to delete ${importedPhotoIds.length} photos...`);
             await Media.deletePhotos({ identifiers: importedPhotoIds });
         } catch (err) {
             console.error("Error deleting from gallery:", err);
+            alert("Deletion failed: " + err.message);
         } finally {
             setShowDeleteFromGalleryModal(false);
             setImportedPhotoIds([]);
