@@ -11,6 +11,9 @@ import LoadingSpinner from './LoadingSpinner';
 
 import PunchListView from './PunchListView';
 import { useApp } from '../AppContext';
+import { Capacitor } from '@capacitor/core';
+import { Camera } from '@capacitor/camera';
+import { Media } from '@capacitor-community/media';
 
 const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId, returnView = 'HOME' }) => {
     const { currentUser, updateCurrentUser } = useApp();
@@ -42,6 +45,8 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
     const [newTagNameInput, setNewTagNameInput] = useState('');
     const [tagToDelete, setTagToDelete] = useState(null);
     const [openTodosCount, setOpenTodosCount] = useState(0);
+    const [importedPhotoIds, setImportedPhotoIds] = useState([]);
+    const [showDeleteFromGalleryModal, setShowDeleteFromGalleryModal] = useState(false);
 
     const fileInputRef = useRef(null);
     const longPressTimer = useRef(null);
@@ -115,6 +120,51 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
         // Reset input so the same files can be selected again if needed
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
+        }
+    };
+
+    const handleNativePick = async () => {
+        try {
+            const result = await Camera.pickImages({
+                quality: 90,
+                limit: 0
+            });
+
+            if (result.photos && result.photos.length > 0) {
+                setIsUploading(true);
+                const identifiers = result.photos.map(p => p.identifier).filter(Boolean);
+                
+                try {
+                    await Promise.all(result.photos.map(async (photo) => {
+                        const response = await fetch(photo.webPath);
+                        const blob = await response.blob();
+                        const file = new File([blob], `import_${Date.now()}.jpg`, { type: 'image/jpeg' });
+                        return db.processAndAddPhoto(file, projectId, activeFolderId);
+                    }));
+
+                    if (identifiers.length > 0) {
+                        setImportedPhotoIds(identifiers);
+                        setShowDeleteFromGalleryModal(true);
+                    }
+                } catch (err) {
+                    console.error("Error processing picked images:", err);
+                } finally {
+                    setIsUploading(false);
+                }
+            }
+        } catch (err) {
+            console.error("Error picking images:", err);
+        }
+    };
+
+    const confirmGalleryDeletion = async () => {
+        try {
+            await Media.deletePhotos({ identifiers: importedPhotoIds });
+        } catch (err) {
+            console.error("Error deleting from gallery:", err);
+        } finally {
+            setShowDeleteFromGalleryModal(false);
+            setImportedPhotoIds([]);
         }
     };
 
@@ -919,7 +969,18 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                 <div className="floating-dock">
                     <button className="dock-btn main" onClick={() => navigateTo('CAMERA', projectId, null, null, activeFolderId)}><Camera size={26} /></button>
                     <div style={{ width: '1px', height: '30px', backgroundColor: 'var(--border)' }}></div>
-                    <button className="dock-btn" onClick={() => fileInputRef.current?.click()}><Upload size={22} /></button>
+                    <button 
+                        className="dock-btn" 
+                        onClick={() => {
+                            if (Capacitor.isNativePlatform()) {
+                                handleNativePick();
+                            } else {
+                                fileInputRef.current?.click();
+                            }
+                        }}
+                    >
+                        <Upload size={22} />
+                    </button>
                 </div>
             )}
 
@@ -1125,6 +1186,40 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                                 disabled={isUploading}
                             >
                                 {isUploading ? 'Processing...' : (deleteModalConfig.type === 'project' ? 'Archive' : 'Delete')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Delete from Camera Roll Confirmation Modal */}
+            {showDeleteFromGalleryModal && (
+                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 5001, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+                    <div style={{ backgroundColor: 'var(--surface)', borderRadius: '20px', padding: '1.75rem', width: '100%', maxWidth: '340px', border: '1px solid var(--border)', boxShadow: '0 10px 40px rgba(0,0,0,0.5)', textAlign: 'center' }}>
+                        <div style={{ width: '56px', height: '56px', borderRadius: '28px', backgroundColor: 'rgba(249,115,22,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.25rem auto', color: 'var(--primary-color)' }}>
+                            <CheckCircle2 size={32} />
+                        </div>
+                        <h3 style={{ margin: '0 0 0.75rem 0', color: 'var(--text-primary)', fontSize: '1.2rem', fontWeight: 700 }}>Import Successful!</h3>
+                        <p style={{ margin: '0 0 1.75rem 0', color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: '1.5' }}>
+                            Would you like to delete these {importedPhotoIds.length} {importedPhotoIds.length === 1 ? 'photo' : 'photos'} from your camera roll to save space?
+                        </p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                            <button
+                                className="btn btn-primary"
+                                onClick={confirmGalleryDeletion}
+                                style={{ width: '100%', padding: '1rem', fontSize: '1rem', fontWeight: 600 }}
+                            >
+                                Delete from Camera Roll
+                            </button>
+                            <button
+                                className="btn"
+                                onClick={() => {
+                                    setShowDeleteFromGalleryModal(false);
+                                    setImportedPhotoIds([]);
+                                }}
+                                style={{ width: '100%', padding: '1rem', fontSize: '1rem', color: 'var(--text-secondary)', border: 'none', background: 'transparent' }}
+                            >
+                                Keep Photos
                             </button>
                         </div>
                     </div>
