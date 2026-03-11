@@ -126,87 +126,42 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
 
     const handleNativePick = async () => {
         try {
-            const result = await Camera.pickImages({
-                quality: 80,
-                limit: 0
+            // Use Media plugin to get photos with persistent identifiers
+            const result = await Media.getMedias({
+                quantity: 0, // 0 means multiple selection allowed
+                types: 'photos'
             });
 
-            if (!result || !result.photos || result.photos.length === 0) return;
+            if (!result || !result.medias || result.medias.length === 0) return;
 
-            const identifiers = result.photos.map(p => p.identifier || p.id).filter(Boolean);
-            
-            // DEBUG ALERT - inspecting the object structure
-            if (result.photos.length > 0) {
-                alert(`DEBUG: Photo[0] keys: ${Object.keys(result.photos[0]).join(', ')}\nFull: ${JSON.stringify(result.photos[0])}`);
-            }
+            setIsUploading(true);
+            const identifiers = result.medias.map(m => m.identifier).filter(Boolean);
             
             try {
-                let i = 0;
-                let successMethods = new Set();
-                for (const photo of result.photos) {
-                    i++;
+                for (const photo of result.medias) {
                     let blob;
-                    let lastError = "";
-
-                    // Attempt 1: Direct Fetch
+                    
+                    // Use the identifier as the path for Filesystem or try the identifier directly
+                    // Note: Media plugin results have 'identifier'. We use Filesystem to read it.
                     try {
-                        const response = await fetch(photo.webPath);
-                        if (response.ok) {
-                            blob = await response.blob();
-                            successMethods.add("Direct Fetch");
-                        } else {
-                            lastError = `HTTP ${response.status}`;
-                        }
-                    } catch (e) {
-                        lastError = e.message;
+                        const fileData = await Filesystem.readFile({
+                            path: photo.identifier // On iOS, the identifier IS the identifier
+                        });
+                        const base64Response = await fetch(`data:image/jpeg;base64,${fileData.data}`);
+                        blob = await base64Response.blob();
+                    } catch (fsErr) {
+                        console.error("FS Read failed during Media import:", fsErr);
                     }
 
-                    // Attempt 2: Convert File Src Fetch
-                    if (!blob) {
-                        try {
-                            const src = Capacitor.convertFileSrc(photo.webPath);
-                            const response = await fetch(src);
-                            if (response.ok) {
-                                blob = await response.blob();
-                                successMethods.add("ConvertFileSrc");
-                            } else {
-                                lastError = `Convert HTTP ${response.status}`;
-                            }
-                        } catch (e) {
-                            lastError = e.message;
-                        }
+                    if (blob) {
+                        const file = new File([blob], `import_${Date.now()}.jpg`, { type: 'image/jpeg' });
+                        await db.processAndAddPhoto(file, projectId, activeFolderId);
                     }
-
-                    // Attempt 3: Filesystem Read
-                    if (!blob && photo.path) {
-                        try {
-                            const fileData = await Filesystem.readFile({
-                                path: photo.path
-                            });
-                            const base64Response = await fetch(`data:image/jpeg;base64,${fileData.data}`);
-                            blob = await base64Response.blob();
-                            successMethods.add("Filesystem");
-                        } catch (e) {
-                            lastError = `Filesystem: ${e.message}`;
-                        }
-                    }
-
-                    if (!blob) {
-                        throw new Error(`Photo ${i} load failed: ${lastError}`);
-                    }
-
-                    const file = new File([blob], `import_${Date.now()}.jpg`, { type: 'image/jpeg' });
-                    await db.processAndAddPhoto(file, projectId, activeFolderId);
                 }
-
-                // Show methods used regardless of identifiers
-                alert(`Methods used: ${Array.from(successMethods).join(', ')}`);
 
                 if (identifiers.length > 0) {
                     setImportedPhotoIds(identifiers);
                     setShowDeleteFromGalleryModal(true);
-                } else {
-                    alert("Note: No identifiers found, skipping deletion prompt.");
                 }
             } catch (err) {
                 console.error("Error processing picked images:", err);
