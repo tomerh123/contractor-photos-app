@@ -14,6 +14,7 @@ import { useApp } from '../AppContext';
 import { Capacitor } from '@capacitor/core';
 import { Camera } from '@capacitor/camera';
 import { Media } from '@capacitor-community/media';
+import { Filesystem } from '@capacitor/filesystem';
 
 const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId, returnView = 'HOME' }) => {
     const { currentUser, updateCurrentUser } = useApp();
@@ -126,7 +127,7 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
     const handleNativePick = async () => {
         try {
             const result = await Camera.pickImages({
-                quality: 90,
+                quality: 80,
                 limit: 0
             });
 
@@ -136,22 +137,58 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
             const identifiers = result.photos.map(p => p.identifier).filter(Boolean);
             
             try {
-                // Sequential processing is safer for memory on mobile than Promise.all
                 let i = 0;
                 for (const photo of result.photos) {
                     i++;
+                    let blob;
+                    let lastError = "";
+
+                    // Attempt 1: Direct Fetch
                     try {
-                        // Use webPath directly as it should already be a web-safe URL
-                        const src = photo.webPath;
-                        const response = await fetch(src);
-                        if (!response.ok) throw new Error(`HTTP ${response.status} fetching photo ${i}`);
-                        const blob = await response.blob();
-                        const file = new File([blob], `import_${Date.now()}.jpg`, { type: 'image/jpeg' });
-                        await db.processAndAddPhoto(file, projectId, activeFolderId);
-                    } catch (innerErr) {
-                        console.error(`Error processing photo ${i}:`, innerErr);
-                        throw new Error(`Photo ${i}: ${innerErr.message}`);
+                        const response = await fetch(photo.webPath);
+                        if (response.ok) {
+                            blob = await response.blob();
+                        } else {
+                            lastError = `HTTP ${response.status}`;
+                        }
+                    } catch (e) {
+                        lastError = e.message;
                     }
+
+                    // Attempt 2: Convert File Src Fetch
+                    if (!blob) {
+                        try {
+                            const src = Capacitor.convertFileSrc(photo.webPath);
+                            const response = await fetch(src);
+                            if (response.ok) {
+                                blob = await response.blob();
+                            } else {
+                                lastError = `Convert HTTP ${response.status}`;
+                            }
+                        } catch (e) {
+                            lastError = e.message;
+                        }
+                    }
+
+                    // Attempt 3: Filesystem Read
+                    if (!blob && photo.path) {
+                        try {
+                            const fileData = await Filesystem.readFile({
+                                path: photo.path
+                            });
+                            const base64Response = await fetch(`data:image/jpeg;base64,${fileData.data}`);
+                            blob = await base64Response.blob();
+                        } catch (e) {
+                            lastError = `Filesystem: ${e.message}`;
+                        }
+                    }
+
+                    if (!blob) {
+                        throw new Error(`Photo ${i} load failed: ${lastError}`);
+                    }
+
+                    const file = new File([blob], `import_${Date.now()}.jpg`, { type: 'image/jpeg' });
+                    await db.processAndAddPhoto(file, projectId, activeFolderId);
                 }
 
                 if (identifiers.length > 0) {
@@ -160,7 +197,7 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                 }
             } catch (err) {
                 console.error("Error processing picked images:", err);
-                alert("Could not process one or more photos: " + err.message);
+                alert("Import failed: " + err.message);
             } finally {
                 setIsUploading(false);
             }
