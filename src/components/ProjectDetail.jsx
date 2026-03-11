@@ -137,12 +137,21 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
             
             try {
                 // Sequential processing is safer for memory on mobile than Promise.all
+                let i = 0;
                 for (const photo of result.photos) {
-                    const src = Capacitor.convertFileSrc(photo.webPath);
-                    const response = await fetch(src);
-                    const blob = await response.blob();
-                    const file = new File([blob], `import_${Date.now()}.jpg`, { type: 'image/jpeg' });
-                    await db.processAndAddPhoto(file, projectId, activeFolderId);
+                    i++;
+                    try {
+                        // Use webPath directly as it should already be a web-safe URL
+                        const src = photo.webPath;
+                        const response = await fetch(src);
+                        if (!response.ok) throw new Error(`HTTP ${response.status} fetching photo ${i}`);
+                        const blob = await response.blob();
+                        const file = new File([blob], `import_${Date.now()}.jpg`, { type: 'image/jpeg' });
+                        await db.processAndAddPhoto(file, projectId, activeFolderId);
+                    } catch (innerErr) {
+                        console.error(`Error processing photo ${i}:`, innerErr);
+                        throw new Error(`Photo ${i}: ${innerErr.message}`);
+                    }
                 }
 
                 if (identifiers.length > 0) {
