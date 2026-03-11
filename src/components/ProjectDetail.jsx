@@ -139,7 +139,10 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
             const collectedTimestamps = [];
             
             try {
-                // Process uploads concurrently instead of sequentially
+                // We keep track of exact identifiers directly from the Camera output
+                // The newest picker sets it as .identifier or .exif.CreationDate if available
+                const identifiersToAsk = [];
+
                 const uploadPromises = result.photos.map(async (photo) => {
                     let blob;
                     try {
@@ -153,54 +156,66 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                     }
 
                     if (blob) {
-                        // Use a random suffix to avoid file name collisions when importing simultaneously
                         const fileName = `import_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
                         const file = new File([blob], fileName, { type: 'image/jpeg' });
                         const addedPhoto = await db.processAndAddPhoto(file, projectId, activeFolderId);
-                        if (addedPhoto && addedPhoto.Timestamp) {
-                            return new Date(addedPhoto.Timestamp).getTime();
+                        
+                        // We track whether they imported this photo successfully
+                        if (addedPhoto) {
+                            if (photo.identifier) {
+                                identifiersToAsk.push(photo.identifier);
+                            } else if (addedPhoto.Timestamp) {
+                                return {
+                                    ts: new Date(addedPhoto.Timestamp).getTime()
+                                };
+                            }
                         }
                     }
                     return null;
                 });
 
-                const timestamps = await Promise.all(uploadPromises);
-                timestamps.forEach(ts => {
-                    if (ts) collectedTimestamps.push(ts);
-                });
+                const collectedTimestampsObjects = await Promise.all(uploadPromises);
                 // Metadata Match Strategy to find identifiers
-                if (collectedTimestamps.length > 0) {
-                    try {
-                        // Get the most recent photos from the gallery
-                        const mediaResult = await Media.getMedias({
-                            quantity: 50, // Scan the last 50 photos for matches
-                            types: 'photos'
-                        });
+                // If the camera picker gave us exact identifiers, we use them safely without fuzzy matching.
+                if (identifiersToAsk.length > 0) {
+                    setImportedPhotoIds(identifiersToAsk);
+                    setShowDeleteFromGalleryModal(true);
+                } else {
+                    // Fallback to fuzzy timestamp matching if exact identifiers weren't provided
+                    const fuzzyTimestamps = collectedTimestampsObjects
+                        .filter(obj => obj !== null)
+                        .map(obj => obj.ts);
+                        
+                    if (fuzzyTimestamps.length > 0) {
+                        try {
+                            const mediaResult = await Media.getMedias({
+                                quantity: 150, // Cast a wider net
+                                types: 'photos'
+                            });
 
-                        const matchingIdentifiers = [];
-                        if (mediaResult && mediaResult.medias) {
-                            for (const m of mediaResult.medias) {
-                                // creationDate from Media plugin is typically a timestamp or date string
-                                const galleryTime = m.creationDate ? new Date(m.creationDate).getTime() : 0;
-                                
-                                // Check if this gallery photo matches any of our imported photo timestamps
-                                // We allow a small 2-second window for variations in extraction/rounding
-                                const isMatch = collectedTimestamps.some(importedTime => 
-                                    Math.abs(importedTime - galleryTime) < 2000
-                                );
+                            const matchingIdentifiers = [];
+                            if (mediaResult && mediaResult.medias) {
+                                for (const m of mediaResult.medias) {
+                                    const galleryTime = m.creationDate ? new Date(m.creationDate).getTime() : 0;
+                                    
+                                    // Expand tolerance to 5 seconds due to async processing delays
+                                    const isMatch = fuzzyTimestamps.some(importedTime => 
+                                        Math.abs(importedTime - galleryTime) < 5000
+                                    );
 
-                                if (isMatch) {
-                                    matchingIdentifiers.push(m.identifier);
+                                    if (isMatch) {
+                                        matchingIdentifiers.push(m.identifier);
+                                    }
                                 }
                             }
-                        }
 
-                        if (matchingIdentifiers.length > 0) {
-                            setImportedPhotoIds(matchingIdentifiers);
-                            setShowDeleteFromGalleryModal(true);
+                            if (matchingIdentifiers.length > 0) {
+                                setImportedPhotoIds(matchingIdentifiers);
+                                setShowDeleteFromGalleryModal(true);
+                            }
+                        } catch (mediaErr) {
+                            console.error("Gallery scan for identifiers failed:", mediaErr);
                         }
-                    } catch (mediaErr) {
-                        console.error("Gallery scan for identifiers failed:", mediaErr);
                     }
                 }
             } catch (err) {
