@@ -28,12 +28,25 @@ const ZoomableSlide = ({ photo, index, swiperRef }) => {
             }}
         >
             <TransformComponent wrapperStyle={{ width: '100%', height: '100%' }} contentStyle={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <img
-                    src={photo.ImageFile}
-                    alt={`Project Photo ${index + 1}`}
-                    draggable={false}
-                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                />
+                {photo.MediaType === 'video' ? (
+                    <video
+                        src={photo.VideoUrl}
+                        poster={photo.ImageFile}
+                        controls
+                        playsInline
+                        style={{ width: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                        onPlay={() => { if (swiperRef) swiperRef.allowTouchMove = false; }}
+                        onPause={() => { if (swiperRef) swiperRef.allowTouchMove = true; }}
+                        onEnded={() => { if (swiperRef) swiperRef.allowTouchMove = true; }}
+                    />
+                ) : (
+                    <img
+                        src={photo.ImageFile}
+                        alt={`Project Photo ${index + 1}`}
+                        draggable={false}
+                        style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                    />
+                )}
             </TransformComponent>
         </TransformWrapper>
     );

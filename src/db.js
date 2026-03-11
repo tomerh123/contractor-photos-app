@@ -1,6 +1,6 @@
 import { auth, db as firestore, storage } from './firebase';
 import { collection, doc, setDoc, getDoc, getDocs, query, where, updateDoc, deleteDoc, deleteField, onSnapshot } from 'firebase/firestore';
-import { ref, uploadString, getDownloadURL, deleteObject } from 'firebase/storage';
+import { ref, uploadString, getDownloadURL, deleteObject, uploadBytes } from 'firebase/storage';
 import exifr from 'exifr';
 
 const getUid = () => {
@@ -218,8 +218,97 @@ export const getAllPhotos = async () => {
 /**
  * Unified helper to process an image file (resize, extract EXIF) and add to DB.
  */
-export const processAndAddPhoto = async (file, projectId, folderId = null, uploaderId = null) => {
+export const processAndAddPhoto = async (file, projectId, folderId = null, uploaderId = null, thumbnailDataUrl = null) => {
     return new Promise((resolve, reject) => {
+        let captureTimestamp = new Date().toISOString();
+        
+        const finishUpload = async (compressedDataUrl) => {
+            try {
+                // Try to extract EXIF
+                if (!file.type.startsWith('video/')) {
+                    try {
+                        const exif = await exifr.parse(file, ['DateTimeOriginal', 'CreateDate']);
+                        const exifDate = exif?.DateTimeOriginal || exif?.CreateDate;
+                        if (exifDate) {
+                            captureTimestamp = new Date(exifDate).toISOString();
+                        }
+                    } catch (exifErr) {
+                        console.log('No EXIF date found, using import time:', exifErr);
+                    }
+                }
+
+                const isVideo = file.type.startsWith('video/');
+
+                const addedPhoto = await addPhoto({
+                    ProjectID: projectId,
+                    ImageFile: compressedDataUrl, // Thumbnail for both
+                    VideoFile: isVideo ? file : null, // Raw blob for storage
+                    MediaType: isVideo ? 'video' : 'photo',
+                    Notes: '',
+                    FolderID: folderId,
+                    Source: uploaderId ? 'camera' : 'gallery',
+                    Timestamp: captureTimestamp,
+                    UploaderID: uploaderId
+                });
+                resolve(addedPhoto);
+            } catch (err) {
+                reject(err);
+            }
+        };
+
+        if (thumbnailDataUrl) {
+            // The native iOS plugin already extracted a thumbnail to base64, skip browser generation
+            finishUpload(thumbnailDataUrl);
+            return;
+        }
+
+        if (file.type.startsWith('video/')) {
+            // For Web/Android: Generate thumbnail natively using HTML5 video element
+            const video = document.createElement('video');
+            video.preload = 'metadata';
+            video.src = URL.createObjectURL(file);
+            video.muted = true;
+            video.playsInline = true;
+            
+            video.onloadeddata = () => {
+                // Seek to first frame or 1 second in depending on duration
+                video.currentTime = Math.min(1.0, video.duration > 0 ? video.duration / 2 : 0);
+            };
+            
+            video.onseeked = () => {
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 1600;
+                const MAX_HEIGHT = 1600;
+                let width = video.videoWidth;
+                let height = video.videoHeight;
+
+                if (width > height) {
+                    if (width > MAX_WIDTH) {
+                        height = Math.round((height *= MAX_WIDTH / width));
+                        width = MAX_WIDTH;
+                    }
+                } else {
+                    if (height > MAX_HEIGHT) {
+                        width = Math.round((width *= MAX_HEIGHT / height));
+                        height = MAX_HEIGHT;
+                    }
+                }
+                
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, 0, width, height);
+                
+                URL.revokeObjectURL(video.src);
+                finishUpload(canvas.toDataURL('image/jpeg', 0.8));
+            };
+            
+            video.onerror = (err) => {
+                reject(err);
+            };
+            return;
+        }
+
         const img = new Image();
         img.onload = async () => {
             const canvas = document.createElement('canvas');
@@ -246,33 +335,8 @@ export const processAndAddPhoto = async (file, projectId, folderId = null, uploa
             ctx.drawImage(img, 0, 0, width, height);
 
             const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
-
-            let captureTimestamp = new Date().toISOString();
-            try {
-                const exif = await exifr.parse(file, ['DateTimeOriginal', 'CreateDate']);
-                const exifDate = exif?.DateTimeOriginal || exif?.CreateDate;
-                if (exifDate) {
-                    captureTimestamp = new Date(exifDate).toISOString();
-                }
-            } catch (exifErr) {
-                console.log('No EXIF date found, using import time:', exifErr);
-            }
-
-            try {
-                const addedPhoto = await addPhoto({
-                    ProjectID: projectId,
-                    ImageFile: compressedDataUrl,
-                    Notes: '',
-                    FolderID: folderId,
-                    Source: uploaderId ? 'camera' : 'gallery',
-                    Timestamp: captureTimestamp,
-                    UploaderID: uploaderId
-                });
-                URL.revokeObjectURL(img.src);
-                resolve(addedPhoto);
-            } catch (err) {
-                reject(err);
-            }
+            URL.revokeObjectURL(img.src);
+            await finishUpload(compressedDataUrl);
         };
         img.onerror = reject;
         img.src = URL.createObjectURL(file);
@@ -282,11 +346,12 @@ export const processAndAddPhoto = async (file, projectId, folderId = null, uploa
 export const addPhoto = async (photoData) => {
     const PhotoID = photoData.PhotoID || `ph_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
     let imageUrl = photoData.ImageFile;
+    let videoUrl = null;
     let originalUrl = photoData.OriginalImageFile;
     const uploadTasks = [];
 
     // Queue base64 to Firebase Storage
-    if (photoData.ImageFile && photoData.ImageFile.startsWith('data:image')) {
+    if (photoData.ImageFile && typeof photoData.ImageFile === 'string' && photoData.ImageFile.startsWith('data:image')) {
         const primaryRef = ref(storage, `users/${getUid()}/photos/${PhotoID}.jpg`);
         uploadTasks.push(
             uploadString(primaryRef, photoData.ImageFile, 'data_url')
@@ -294,8 +359,19 @@ export const addPhoto = async (photoData) => {
                 .then(url => { imageUrl = url; })
         );
     }
+    
+    // Queue raw video Blob to Firebase Storage
+    if (photoData.VideoFile) {
+        const videoRef = ref(storage, `users/${getUid()}/videos/${PhotoID}.mp4`);
+        uploadTasks.push(
+            uploadBytes(videoRef, photoData.VideoFile)
+                .then(() => getDownloadURL(videoRef))
+                .then(url => { videoUrl = url; })
+        );
+        delete photoData.VideoFile;
+    }
 
-    if (photoData.OriginalImageFile && photoData.OriginalImageFile.startsWith('data:image')) {
+    if (photoData.OriginalImageFile && typeof photoData.OriginalImageFile === 'string' && photoData.OriginalImageFile.startsWith('data:image')) {
         const origRef = ref(storage, `users/${getUid()}/photos/${PhotoID}_orig.jpg`);
         uploadTasks.push(
             uploadString(origRef, photoData.OriginalImageFile, 'data_url')
@@ -321,6 +397,10 @@ export const addPhoto = async (photoData) => {
         newPhoto.OriginalImageFile = originalUrl;
     } else {
         delete newPhoto.OriginalImageFile;
+    }
+    
+    if (videoUrl) {
+        newPhoto.VideoUrl = videoUrl;
     }
 
     await setDoc(doc(firestore, 'photos', PhotoID), newPhoto);

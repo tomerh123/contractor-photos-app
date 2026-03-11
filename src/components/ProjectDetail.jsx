@@ -108,14 +108,28 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
         const files = Array.from(e.target.files);
         if (files.length === 0) return;
 
+        const validFiles = [];
+        for (const file of files) {
+            if (file.type.startsWith('video/') && file.size > 50 * 1024 * 1024) {
+                alert(`The video '${file.name}' exceeds the 50MB limit and will be skipped.`);
+                continue;
+            }
+            validFiles.push(file);
+        }
+
+        if (validFiles.length === 0) {
+            if (fileInputRef.current) fileInputRef.current.value = '';
+            return;
+        }
+
         setIsUploading(true);
 
         try {
             await Promise.all(
-                files.map(file => db.processAndAddPhoto(file, projectId, activeFolderId))
+                validFiles.map(file => db.processAndAddPhoto(file, projectId, activeFolderId))
             );
         } catch (err) {
-            console.error("Error importing photos:", err);
+            console.error("Error importing files:", err);
         }
 
         setIsUploading(false);
@@ -153,19 +167,28 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
 
                 const uploadPromises = result.photos.map(async (photo) => {
                     let blob;
+                    let thumbnailDataUrl = null;
+                    let fileType = 'image/jpeg';
+                    let fileExtension = 'jpg';
+                    let isVideo = false;
+
                     try {
                         if (isIOS && photo.path) {
-                           // Ensure it's prefixed with file:// so Capacitor knows it's an absolute native path
+                           if (photo.mediaType === 'video') {
+                               isVideo = true;
+                               fileType = 'video/mp4';
+                               fileExtension = 'mp4';
+                               thumbnailDataUrl = photo.dataUrl;
+                           }
                            const safePath = photo.path.startsWith('file://') ? photo.path : `file://${photo.path}`;
-                           const response = await fetch(safePath);
+                           const webPath = Capacitor.convertFileSrc(safePath);
+                           const response = await fetch(webPath);
                            blob = await response.blob();
                         } else if (photo.dataUrl) {
-                           // Sometimes fallback base64
                            const base64Data = photo.dataUrl.split(',')[1] || photo.dataUrl;
                            const base64Response = await fetch(`data:image/jpeg;base64,${base64Data}`);
                            blob = await base64Response.blob();
                         } else {
-                           // Standard Camera picker
                            const fileData = await Filesystem.readFile({ path: photo.path });
                            const base64Response = await fetch(`data:image/jpeg;base64,${fileData.data}`);
                            blob = await base64Response.blob();
@@ -175,9 +198,14 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                     }
 
                     if (blob) {
-                        const fileName = `import_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
-                        const file = new File([blob], fileName, { type: 'image/jpeg' });
-                        const addedPhoto = await db.processAndAddPhoto(file, projectId, activeFolderId);
+                        if (isVideo && blob.size > 50 * 1024 * 1024) {
+                            alert("One of the selected videos exceeds the 50MB limit and will be skipped!");
+                            return null;
+                        }
+
+                        const fileName = `import_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExtension}`;
+                        const file = new File([blob], fileName, { type: fileType });
+                        const addedPhoto = await db.processAndAddPhoto(file, projectId, activeFolderId, null, thumbnailDataUrl);
                         
                         // We track whether they imported this photo successfully
                         if (addedPhoto) {
@@ -501,7 +529,7 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
             {/* Hidden File Input for Camera Roll Import */}
             <input
                 type="file"
-                accept="image/*"
+                accept="image/*,video/*"
                 multiple
                 ref={fileInputRef}
                 style={{ display: 'none' }}
@@ -897,8 +925,13 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
                         {effectiveFilter !== 'Rooms' && (
                             displayedPhotos.length === 0 ? (
                                 <div style={{ padding: '2rem', textAlign: 'center', backgroundColor: 'var(--surface)', borderRadius: '12px', color: 'var(--text-secondary)' }}>
-                                    <p>No photos yet.</p>
-                                    <p style={{ fontSize: '0.8rem', marginTop: '0.5rem' }}>Tap the camera icon to take the first photo, or the upload icon to import.</p>
+                                <div style={{ marginBottom: '1.5rem' }}>
+                                    <CameraIcon size={48} style={{ color: 'var(--text-tertiary)' }} />
+                                </div>
+                                <h3 style={{ fontSize: '1.2rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>No Data Yet</h3>
+                                <p style={{ color: 'var(--text-tertiary)', maxWidth: '280px', margin: '0 auto', lineHeight: '1.5' }}>
+                                    Tap the camera icon to capture media, or the upload icon to import.
+                                </p>
                                 </div>
                             ) : (
                                 <div className="photo-grid" style={{

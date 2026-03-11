@@ -4,4 +4,5 @@
 CAP_PLUGIN(NativePhotoDeleterPlugin, "NativePhotoDeleter",
     CAP_PLUGIN_METHOD(deletePhotos, CAPPluginReturnPromise);
     CAP_PLUGIN_METHOD(pickImages, CAPPluginReturnPromise);
+    CAP_PLUGIN_METHOD(captureMedia, CAPPluginReturnPromise);
 )

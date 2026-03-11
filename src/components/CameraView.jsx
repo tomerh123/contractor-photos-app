@@ -1,45 +1,59 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
-import { Camera as CameraIcon } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
 import * as db from '../db';
 import LoadingSpinner from './LoadingSpinner';
+
+const NativePhotoDeleter = Capacitor.registerPlugin('NativePhotoDeleter');
 
 const CameraView = ({ projectId, currentFolderId, navigateTo, returnView = 'HOME' }) => {
     const hasRequested = useRef(false);
     const [error, setError] = useState(null);
+    const webInputRef = useRef(null);
 
     useEffect(() => {
         if (hasRequested.current) return;
         hasRequested.current = true;
 
-        const captureNativePhoto = async () => {
+        const captureMedia = async () => {
             try {
-                // Pre-check permissions
-                try {
-                    await Camera.requestPermissions();
-                } catch (permErr) {
-                    console.log('OS permission flow handled:', permErr);
-                }
+                if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios') {
+                    // Invoke Unified Native iOS Camera
+                    const result = await NativePhotoDeleter.captureMedia();
 
-                // Invoke Native Apple Camera UI Bypass
-                const image = await Camera.getPhoto({
-                    quality: 80,
-                    allowEditing: false,
-                    resultType: CameraResultType.DataUrl,
-                    source: CameraSource.Camera,
-                    width: 1536 // Balanced for high DPI markup without causing 15s base64 encoding blocks
-                });
+                    if (result && result.type) {
+                        if (result.type === 'video') {
+                            const safePath = result.path.startsWith('file://') ? result.path : `file://${result.path}`;
+                            const webPath = Capacitor.convertFileSrc(safePath);
+                            const response = await fetch(webPath);
+                            const blob = await response.blob();
 
-                if (image && image.dataUrl) {
-                    // Convert dataUrl to a File object for unified processing
-                    const res = await fetch(image.dataUrl);
-                    const blob = await res.blob();
-                    const file = new File([blob], `camera_${Date.now()}.jpg`, { type: 'image/jpeg' });
-                    
-                    await db.processAndAddPhoto(file, projectId, currentFolderId, "camera");
-                    navigateTo('PROJECT_DETAIL', projectId);
+                            if (blob.size > 50 * 1024 * 1024) {
+                                alert("The recorded video exceeds the 50MB limit and will be skipped!");
+                                navigateTo(returnView, projectId);
+                                return;
+                            }
+
+                            const fileName = `camera_video_${Date.now()}.mp4`;
+                            const file = new File([blob], fileName, { type: 'video/mp4' });
+                            
+                            await db.processAndAddPhoto(file, projectId, currentFolderId, "camera", result.dataUrl);
+                            navigateTo('PROJECT_DETAIL', projectId);
+                        } else if (result.type === 'image') {
+                            const res = await fetch(result.dataUrl);
+                            const blob = await res.blob();
+                            const file = new File([blob], `camera_${Date.now()}.jpg`, { type: 'image/jpeg' });
+                            
+                            await db.processAndAddPhoto(file, projectId, currentFolderId, "camera");
+                            navigateTo('PROJECT_DETAIL', projectId);
+                        }
+                    } else {
+                        navigateTo(returnView, projectId);
+                    }
                 } else {
-                    navigateTo(returnView, projectId);
+                    // Web Fallback: Using an input allows the device to prompt for Photo or Video
+                    if (webInputRef.current) {
+                        webInputRef.current.click();
+                    }
                 }
             } catch (err) {
                 console.error("Camera Error Payload:", err);
@@ -52,8 +66,30 @@ const CameraView = ({ projectId, currentFolderId, navigateTo, returnView = 'HOME
         };
 
         // iOS requires a slight delay to ensure UI stack is ready before launching external view controllers
-        setTimeout(captureNativePhoto, 300);
-    }, [projectId, navigateTo]);
+        setTimeout(captureMedia, 300);
+    }, [projectId, navigateTo, currentFolderId, returnView]);
+
+    const handleWebVideoCapture = async (event) => {
+        const file = event.target.files[0];
+        if (!file) {
+            navigateTo(returnView, projectId);
+            return;
+        }
+
+        if (file.type.startsWith('video/') && file.size > 50 * 1024 * 1024) {
+            alert("The recorded video exceeds the 50MB limit!");
+            navigateTo(returnView, projectId);
+            return;
+        }
+
+        try {
+            await db.processAndAddPhoto(file, projectId, currentFolderId, "camera");
+            navigateTo('PROJECT_DETAIL', projectId);
+        } catch (err) {
+            console.error("Web Capture Error:", err);
+            setError("Failed to process web capture.");
+        }
+    };
 
     return (
         <div
@@ -65,6 +101,15 @@ const CameraView = ({ projectId, currentFolderId, navigateTo, returnView = 'HOME
                 willChange: 'transform'
             }}
         >
+            <input 
+                type="file" 
+                accept="image/*,video/*" 
+                capture="environment"
+                ref={webInputRef}
+                style={{ display: 'none' }}
+                onChange={handleWebVideoCapture}
+            />
+
             {error ? (
                 <>
                     <h2 style={{ color: 'var(--danger)', marginBottom: '1rem' }}>Hardware Stream Blocked</h2>
