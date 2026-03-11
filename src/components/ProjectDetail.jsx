@@ -134,17 +134,14 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
             if (!result || !result.photos || result.photos.length === 0) return;
 
             setIsUploading(true);
-            // On some versions/configs, identifier might be missing. Try id as well.
-            const identifiers = result.photos.map(p => p.identifier || p.id).filter(Boolean);
+            const collectedTimestamps = [];
             
             try {
                 for (const photo of result.photos) {
                     let blob;
-                    
-                    // Use Filesystem as the primary loader as it proved most reliable
                     try {
                         const fileData = await Filesystem.readFile({
-                            path: photo.path // photo.path is the file:/// path
+                            path: photo.path
                         });
                         const base64Response = await fetch(`data:image/jpeg;base64,${fileData.data}`);
                         blob = await base64Response.blob();
@@ -154,13 +151,47 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
 
                     if (blob) {
                         const file = new File([blob], `import_${Date.now()}.jpg`, { type: 'image/jpeg' });
-                        await db.processAndAddPhoto(file, projectId, activeFolderId);
+                        const addedPhoto = await db.processAndAddPhoto(file, projectId, activeFolderId);
+                        if (addedPhoto && addedPhoto.Timestamp) {
+                            collectedTimestamps.push(new Date(addedPhoto.Timestamp).getTime());
+                        }
                     }
                 }
 
-                if (identifiers.length > 0) {
-                    setImportedPhotoIds(identifiers);
-                    setShowDeleteFromGalleryModal(true);
+                // Metadata Match Strategy to find identifiers
+                if (collectedTimestamps.length > 0) {
+                    try {
+                        // Get the most recent photos from the gallery
+                        const mediaResult = await Media.getMedias({
+                            quantity: 50, // Scan the last 50 photos for matches
+                            types: 'photos'
+                        });
+
+                        const matchingIdentifiers = [];
+                        if (mediaResult && mediaResult.medias) {
+                            for (const m of mediaResult.medias) {
+                                // creationDate from Media plugin is typically a timestamp or date string
+                                const galleryTime = m.creationDate ? new Date(m.creationDate).getTime() : 0;
+                                
+                                // Check if this gallery photo matches any of our imported photo timestamps
+                                // We allow a small 2-second window for variations in extraction/rounding
+                                const isMatch = collectedTimestamps.some(importedTime => 
+                                    Math.abs(importedTime - galleryTime) < 2000
+                                );
+
+                                if (isMatch) {
+                                    matchingIdentifiers.push(m.identifier);
+                                }
+                            }
+                        }
+
+                        if (matchingIdentifiers.length > 0) {
+                            setImportedPhotoIds(matchingIdentifiers);
+                            setShowDeleteFromGalleryModal(true);
+                        }
+                    } catch (mediaErr) {
+                        console.error("Gallery scan for identifiers failed:", mediaErr);
+                    }
                 }
             } catch (err) {
                 console.error("Error processing picked images:", err);
