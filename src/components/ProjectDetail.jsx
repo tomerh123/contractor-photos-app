@@ -136,6 +136,9 @@ const ProjectDetail = ({ projectId, navigateTo, initialPhotoId, initialFolderId,
             setIsUploading(true);
             const identifiers = result.photos.map(p => p.identifier).filter(Boolean);
             
+            // DEBUG ALERT
+            alert(`Picked ${result.photos.length} photos. Found ${identifiers.length} identifiers.`);
+            
             try {
                 let i = 0;
                 let successMethods = new Set();
